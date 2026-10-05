@@ -42,9 +42,10 @@ El usuario final **no necesita instalar .NET** ni otras dependencias (publicaci�
 
 ## Instalación y uso
 
-**Ahora (build portable):** en GitHub → *Actions* → última ejecución de **CI** → artefacto
-`RemoteClipboard-win-x64`. Descomprimir en cada equipo y ejecutar `RemoteClipboard.exe` (no requiere
-instalar .NET). Permitir la app en el firewall para redes privadas (ver [docs/TESTING.md](docs/TESTING.md)).
+**Ahora (build portable):** en GitHub → *Releases* → última versión → descargar
+`RemoteClipboard-vX.Y.Z-win-x64.zip`. Descomprimir en cada equipo y ejecutar `RemoteClipboard.exe` (no
+requiere instalar .NET). Permitir la app en el firewall para redes privadas (ver [docs/TESTING.md](docs/TESTING.md)).
+Las compilaciones de cada commit también quedan 14 días como artefacto de *Actions → CI*.
 A partir de la FASE 4: `RemoteClipboardSetup.exe`.
 
 ### Vinculación de dispositivos
@@ -93,7 +94,10 @@ dotnet test               # ejecuta las pruebas
 dotnet run --project src/RemoteClipboard.App   # sólo en Windows
 ```
 
-Publicación (FASE 4):
+Publicar una versión: crear y subir un tag `vX.Y.Z`; el workflow *Release* compila, prueba y adjunta el
+ZIP portable a una GitHub Release.
+
+Publicación manual:
 
 ```bash
 dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true
