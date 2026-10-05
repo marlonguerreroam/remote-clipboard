@@ -31,7 +31,20 @@ public static class DeviceCertificateFactory
             [new Oid(ServerAuthOid), new Oid(ClientAuthOid)], critical: false));
         request.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(request.PublicKey, critical: false));
 
-        return request.CreateSelfSigned(now.AddDays(-1), now.Add(Validity));
+        using var ephemeral = request.CreateSelfSigned(now.AddDays(-1), now.Add(Validity));
+
+        // CreateSelfSigned yields an ephemeral key, which Windows SChannel rejects for TLS
+        // ("The credentials supplied to the package were not recognized"). Round-trip through
+        // PKCS#12 so the returned certificate is usable for TLS on every platform.
+        var pkcs12 = ExportWithPrivateKey(ephemeral);
+        try
+        {
+            return ImportWithPrivateKey(pkcs12);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(pkcs12);
+        }
     }
 
     /// <summary>
