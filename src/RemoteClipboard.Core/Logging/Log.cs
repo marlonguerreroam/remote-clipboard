@@ -14,6 +14,15 @@ public static partial class Log
     [LoggerMessage(EventId = 1000, Level = LogLevel.Debug, Message = "Clipboard event detected (format: {Format})")]
     public static partial void ClipboardEventDetected(ILogger logger, ClipboardFormat format);
 
+    [LoggerMessage(EventId = 1005, Level = LogLevel.Warning, Message = "Clipboard is busy (held by another application); change skipped")]
+    public static partial void ClipboardBusy(ILogger logger);
+
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Warning, Message = "Could not write remote content to the clipboard")]
+    public static partial void ClipboardWriteFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(EventId = 9000, Level = LogLevel.Error, Message = "Unexpected error in {Component}")]
+    public static partial void UnexpectedError(ILogger logger, string component, Exception exception);
+
     [LoggerMessage(EventId = 1001, Level = LogLevel.Debug, Message = "Clipboard change not broadcast: {Decision}")]
     public static partial void ClipboardChangeSkipped(ILogger logger, OutboundDecision decision);
 

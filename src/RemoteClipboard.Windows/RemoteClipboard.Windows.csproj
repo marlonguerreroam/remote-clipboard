@@ -7,9 +7,14 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <RootNamespace>RemoteClipboard.Windows</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- WinForms only for NativeWindow + message loop on the clipboard thread. -->
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\RemoteClipboard.Core\RemoteClipboard.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="RemoteClipboard.Windows.Tests" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Security.Cryptography.ProtectedData" />
