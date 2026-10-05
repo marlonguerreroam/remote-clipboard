@@ -16,7 +16,8 @@ SHA-256, HMAC, HKDF, DPAPI y J-PAKE (RFC 8236, implementación de BouncyCastle).
 | Adivinar el código de vinculación | Vincularse sin permiso | J-PAKE: sólo 1 intento online por ejecución; código de un solo uso, 2 min, 3 fallos ⇒ código quemado. |
 | Otro usuario del mismo Windows Server | Leer el portapapeles o robar la identidad | Agente por usuario en su sesión, identidad cifrada con DPAPI CurrentUser, lista de peers por usuario. |
 | Lectura de logs/archivos | Recuperar contenido | Nunca se registra ni se guarda contenido; huellas HMAC sólo en memoria con clave aleatoria. |
-| Peer malicioso vinculado | DoS por mensajes enormes | Límite de trama (6 MiB) y de contenido (4 MiB) verificado **antes** de reservar memoria. |
+| Peer malicioso vinculado | DoS por mensajes enormes | Límite de trama (1 MiB) y de contenido (32 MiB) verificado **antes** de reservar memoria. |
+| Peer vinculado que reenvía contenido ajeno | Inyectar contenido "de otro" | `OriginDeviceId` debe ser el del peer autenticado; nada se retransmite. |
 
 Fuera de alcance del MVP: malware ejecutándose como el mismo usuario (puede leer el portapapeles
 igualmente).
@@ -55,13 +56,17 @@ Protocolo (A = equipo que muestra el código, B = equipo que lo introduce):
 2. B introduce IP (o elige un equipo descubierto) y el código.
 3. B abre TLS con A. En modo vinculación cada lado acepta cualquier certificado pero registra su pin
    (`pinA`, `pinB`).
-4. Dentro del canal TLS: rondas 1 y 2 de **J-PAKE** (grupo NIST 3072 bits, SHA-256), con
+4. Dentro del canal TLS (mensajes `pairRequest` → `pairRound1/2` → `pairConfirm` → `pairResult`): rondas 1 y 2 de **J-PAKE** (grupo NIST 3072 bits, SHA-256), con
    `participantId` = DeviceIds y contraseña = código ⇒ material de clave compartido.
 5. Confirmación de clave **ligada al canal**: `K = HKDF-SHA256(material, info="RemoteClipboard-Pairing-v1")`;
    cada lado envía `HMAC-SHA256(K, rol ‖ idA ‖ idB ‖ pinA ‖ pinB)` y verifica el del otro en tiempo
    constante. Un MITM tendría pins distintos en cada tramo ⇒ las MAC no coinciden; y sin el código no
    puede calcular `K` (sólo 1 intento por ejecución, 3 por código).
 6. Éxito ⇒ ambos guardan `PairedDevice { DeviceId, nombre, pin }`. El código queda consumido.
+   Cualquier desviación del protocolo (incluido abortar a mitad) cuenta como intento fallido.
+
+Implementación: `Core/Pairing/PairingProtocol.cs`. Pruebas: código correcto, código incorrecto, MITM con
+el código correcto pero certificados propios (detectado), bloqueo tras 3 intentos, invitación cerrada.
 
 Alternativas evaluadas: clave simétrica compartida (sin revocación por dispositivo), CA propia
 (compleja), tokens *bearer* (si se filtran, suplantación), comparación visual de código SAS (segura,
@@ -89,4 +94,7 @@ pero no encaja con "introduzca el código mostrado"; queda como plan B sin depen
   longitud, código de vinculación o material de clave.
 - Los búferes de tramas se ponen a cero tras usarlos.
 - Se respetan los formatos de exclusión que usan los gestores de contraseñas
-  (`ExcludeClipboardContentFromMonitorProcessing`, `CanUploadToCloud=0`, etc.).
+  (`ExcludeClipboardContentFromMonitorProcessing`, `CanUploadToCloud=0`, etc.): ese contenido ni se lee.
+- Lo recibido de otro equipo se marca para que no vaya al portapapeles en la nube ni al historial de Windows.
+- Una prueba de extremo a extremo verifica que ni el contenido copiado ni el código de vinculación
+  aparecen en ningún log.

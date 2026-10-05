@@ -32,11 +32,17 @@ conexión TCP persistente.
 
 ## Protocolo
 
-`[uint32 big-endian longitud][JSON UTF-8]` dentro de TLS. Mensajes: `hello`, `clipboard`, `ping`, `pong`
-(los de vinculación se añaden en Fase 1). Discriminador `type` estable; los tipos nuevos (imágenes,
-archivos, rotación de claves) se añaden sin romper versiones anteriores.
+`[uint32 big-endian longitud][JSON UTF-8]` dentro de TLS. Mensajes: `hello`, `clipboard`, `ping`, `pong`,
+`pairRequest`, `pairRound1`, `pairRound2`, `pairConfirm`, `pairResult`. Discriminador `type` estable; los
+tipos nuevos (imágenes, archivos, rotación de claves) se añaden sin romper versiones anteriores.
 
-Límites: trama ≤ 6 MiB, contenido ≤ 4 MiB; longitudes inválidas se rechazan antes de reservar memoria.
+**Textos largos:** cada copia (≤ 32 MiB) se envía como mensajes `clipboard` consecutivos de ≤ 256 KiB
+(trama ≤ 1 MiB). El receptor valida cada cabecera (tamaño total, índice, origen) **antes** de reservar
+memoria; una copia nueva abandona una transferencia incompleta (gana la más reciente).
+
+**Conexiones duplicadas:** si ambos equipos se conectan a la vez, ambos conservan la conexión abierta
+por el `DeviceId` menor. La otra se "retira": deja de usarse para enviar pero sigue leyendo 5 s, de modo
+que ningún mensaje en vuelo se pierde.
 
 ## Fallos de red y reconexión
 
@@ -45,7 +51,7 @@ Límites: trama ≤ 6 MiB, contenido ≤ 4 MiB; longitudes inválidas se rechaza
 | Wi-Fi/cable desconectado, equipo apagado o reiniciado | Heartbeat `ping` cada 15 s; sin respuesta en 45 s ⇒ desconectado. |
 | Reintento | Backoff exponencial 1 s → 30 s con *jitter*. |
 | Red recupera conectividad | `NetworkChange.NetworkAddressChanged` dispara un reintento inmediato. |
-| Cambio de IP del peer | Se actualiza con: conexiones entrantes del peer (+ su puerto en `Hello`) y anuncios de descubrimiento (Fase 2). En el MVP también se puede editar la IP manualmente. |
+| Cambio de IP del peer | Se actualiza con: conexiones entrantes del peer (+ su puerto en `Hello`) y anuncios de descubrimiento (Fase 2). Basta con que uno de los dos conserve su dirección; si ambos cambian a la vez, en el MVP hay que volver a vincular (el descubrimiento de la Fase 2 lo resuelve). |
 | Aplicación reiniciada | La identidad y los pins persisten; se reconecta sola. |
 | Firewall bloqueando temporalmente | Se trata como desconexión; se reintenta con backoff. |
 

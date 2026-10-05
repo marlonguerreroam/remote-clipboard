@@ -4,12 +4,12 @@ Portapapeles compartido, seguro y transparente entre computadores Windows de una
 Copias con **Ctrl+C** en un equipo y pegas con **Ctrl+V** en otro, también en Windows Server y
 sesiones RDP.
 
-> **Estado:** FASE 0 completada (arquitectura + estructura inicial). La sincronización real llega
-> en la FASE 1. Todavía no hay una versión instalable.
+> **Estado:** FASE 1 (MVP) completada: sincronización bidireccional cifrada de texto entre equipos
+> vinculados de la LAN. Hay un build portable para probar; el instalador llega en la FASE 4.
 
-## Características (objetivo del MVP)
+## Características
 
-- Texto plano Unicode: español, emojis, saltos de línea.
+- Texto plano Unicode: español, emojis, saltos de línea; textos largos (hasta 32 MiB por copia).
 - Sincronización bidireccional automática entre equipos vinculados de la LAN.
 - Vinculación explícita con código de 6 dígitos (J-PAKE, resistente a ataques offline).
 - Cifrado TLS con autenticación mutua y pinning de clave pública.
@@ -28,6 +28,7 @@ envía por **TCP + TLS mutuo** directamente a los dispositivos vinculados.
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Stack, capas, portapapeles, Windows Server/RDP, anti-loops, instalación, testing, riesgos, decisiones pendientes |
 | [docs/SECURITY.md](docs/SECURITY.md) | Modelo de amenazas, identidad, TLS con pins, protocolo de vinculación, secretos, privacidad |
 | [docs/NETWORKING.md](docs/NETWORKING.md) | Puertos, firewall, topología, protocolo, reconexión, descubrimiento |
+| [docs/TESTING.md](docs/TESTING.md) | Pruebas automáticas y plan de pruebas manuales con dos equipos |
 
 ## Requisitos y Windows compatibles
 
@@ -41,18 +42,33 @@ El usuario final **no necesita instalar .NET** ni otras dependencias (publicaci�
 
 ## Instalación y uso
 
-*Disponible a partir de la FASE 4 (`RemoteClipboardSetup.exe`).* Flujo previsto:
+**Ahora (build portable):** en GitHub → *Actions* → última ejecución de **CI** → artefacto
+`RemoteClipboard-win-x64`. Descomprimir en cada equipo y ejecutar `RemoteClipboard.exe` (no requiere
+instalar .NET). Permitir la app en el firewall para redes privadas (ver [docs/TESTING.md](docs/TESTING.md)).
+A partir de la FASE 4: `RemoteClipboardSetup.exe`.
 
-1. Ejecutar el instalador en cada equipo.
-2. En el equipo A: bandeja → **+ Vincular dispositivo** → se muestra un código, p. ej. `847291`.
-3. En el equipo B: **+ Vincular dispositivo** → introducir la IP de A (o elegirlo de la lista) y el código.
-4. Listo: Ctrl+C en uno, Ctrl+V en el otro, en ambos sentidos.
+### Vinculación de dispositivos
+
+1. En el equipo A: icono de la bandeja → **Vincular dispositivo…** → **Mostrar código** (p. ej. `847 291`,
+   válido 2 minutos). La ventana también muestra la IP de A.
+2. En el equipo B: **Vincular dispositivo…** → **Introducir código** → IP de A + código → **Vincular**.
+3. Listo: Ctrl+C en uno, Ctrl+V en el otro, en ambos sentidos. Se reconectan solos tras reinicios,
+   cortes de red o cambios de IP.
+
+Desde la bandeja: abrir la ventana, ver el estado, activar/desactivar la sincronización, iniciar con
+Windows (activado por defecto en escritorio; opcional en Windows Server) y salir.
+
+Datos locales (por usuario): `%LOCALAPPDATA%\RemoteClipboard` — `secrets\` (identidad cifrada con DPAPI),
+`peers.json` (dispositivos vinculados), `settings.json`, `logs\` (7 días).
 
 ## Seguridad y networking (resumen)
 
 - Puerto **TCP 47800** (47801–47809 en servidores multiusuario), sólo perfiles Privado/Dominio y subred local.
 - Puerto **UDP 47810** para descubrimiento (FASE 2, opcional).
 - Identidad por usuario/equipo: GUID + certificado ECDSA P-256 protegido con DPAPI.
+- Vinculación con J-PAKE + confirmación ligada a los certificados (resiste MITM y ataques offline).
+- Lo recibido no va al portapapeles en la nube ni al historial de Windows; el contenido de gestores de
+  contraseñas no se sincroniza.
 - Detalles en [docs/SECURITY.md](docs/SECURITY.md) y [docs/NETWORKING.md](docs/NETWORKING.md).
 
 ## Estructura del proyecto
@@ -61,7 +77,8 @@ El usuario final **no necesita instalar .NET** ni otras dependencias (publicaci�
 src/RemoteClipboard.Core      Dominio, protocolo, seguridad, vinculación, sincronización (multiplataforma)
 src/RemoteClipboard.Windows   Adaptadores Win32: portapapeles, DPAPI, instancia única, autoarranque
 src/RemoteClipboard.App       Aplicación WPF de bandeja (raíz de composición)
-tests/RemoteClipboard.Core.Tests
+tests/RemoteClipboard.Core.Tests     Unitarias + extremo a extremo (cualquier SO)
+tests/RemoteClipboard.Windows.Tests  Portapapeles Win32 real (sólo Windows)
 docs/                         Arquitectura, seguridad, networking
 installer/                    Inno Setup (FASE 4)
 ```
@@ -88,8 +105,8 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 ## Roadmap
 
 - [x] **FASE 0 — Arquitectura**: análisis, stack, estructura, primitivas base con pruebas.
-- [ ] **FASE 1 — MVP**: monitor de portapapeles, identidad, TLS en LAN, vinculación, sync bidireccional, anti-loops.
-- [ ] **FASE 2 — Aplicación completa**: bandeja, UI moderna, descubrimiento, lista de dispositivos, configuración.
+- [x] **FASE 1 — MVP**: monitor de portapapeles, identidad, TLS en LAN, vinculación, sync bidireccional, anti-loops.
+- [ ] **FASE 2 — Aplicación completa**: descubrimiento automático, configuración, modo oscuro, icono definitivo (bandeja, UI y lista de dispositivos ya existen).
 - [ ] **FASE 3 — Windows Server**: RDP, multiusuario, separación de sesiones.
 - [ ] **FASE 4 — Distribución**: instalador, autoarranque, firewall, actualización, firma.
 - [ ] **FASE 5 — Avanzado**: imágenes, archivos, historial opcional, políticas (solo enviar / solo recibir).
@@ -97,8 +114,10 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 
 ## Limitaciones conocidas
 
-- Aún no sincroniza (FASE 0).
-- Sólo LAN; redes Wi-Fi con aislamiento de clientes impiden la comunicación directa.
-- Sólo texto en el MVP.
+- Sólo LAN y dirección IP manual (descubrimiento automático en FASE 2); redes Wi-Fi con aislamiento de
+  clientes impiden la comunicación directa.
+- Sólo texto (imágenes/archivos en FASE 5). Máximo 32 MiB por copia.
+- Sin instalador ni regla de firewall automática hasta la FASE 4.
 - Un mismo usuario con dos sesiones simultáneas en un servidor: sólo una ejecuta el agente.
+- Windows Server/RDP multiusuario diseñado pero aún no validado en servidores reales (FASE 3).
 - Sin firma de código hasta la FASE 4 (SmartScreen puede advertir).

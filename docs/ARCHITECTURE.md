@@ -1,4 +1,4 @@
-# Arquitectura — Remote Clipboard (FASE 0)
+# Arquitectura — Remote Clipboard
 
 > Documento de decisiones técnicas. Seguridad y redes tienen su propio documento:
 > [SECURITY.md](SECURITY.md) y [NETWORKING.md](NETWORKING.md).
@@ -73,10 +73,11 @@ Ver [NETWORKING.md](NETWORKING.md) y [SECURITY.md](SECURITY.md).
    (usados por gestores de contraseñas). → `ClipboardChange.IsExcludedByOwner`.
 3. Si está presente nuestro formato privado `RemoteClipboard.RemoteOrigin` → cambio de origen remoto.
 4. `IsClipboardFormatAvailable(CF_UNICODETEXT)` → `GetClipboardData` → `GlobalLock`, lectura
-   acotada por `GlobalSize` y por el límite del protocolo (4 MiB).
+   acotada por `GlobalSize` y por el límite del protocolo (32 MiB). Si excede el límite ni siquiera se lee.
 
 **Escritura (contenido remoto):** `OpenClipboard` → `EmptyClipboard` → `SetClipboardData(CF_UNICODETEXT)`
-+ `SetClipboardData(RemoteClipboard.RemoteOrigin)` → `CloseClipboard`. Ctrl+V funciona en cualquier
++ `RemoteClipboard.RemoteOrigin` + `CanUploadToCloud=0` + `CanIncludeInClipboardHistory=0` → `CloseClipboard`.
+Lo recibido de otro equipo nunca sube al portapapeles en la nube de Windows ni al historial (Win+V). Ctrl+V funciona en cualquier
 aplicación porque es un CF_UNICODETEXT normal.
 
 **Formatos futuros:** `ClipboardFormat` (valores estables del protocolo) + `ClipboardContent` (bytes +
@@ -162,8 +163,9 @@ remote-clipboard/
 | Paquete | Uso | Justificación |
 |---|---|---|
 | `Microsoft.Extensions.Logging(.Abstractions)` | Logging | Estándar de .NET. |
-| `System.Security.Cryptography.ProtectedData` | DPAPI | Paquete oficial de Microsoft. |
-| `BouncyCastle.Cryptography` (Fase 1) | J-PAKE | .NET no incluye ningún PAKE. Librería criptográfica madura (MIT). Sólo se usa en la vinculación. |
+| `BouncyCastle.Cryptography` | J-PAKE | .NET no incluye ningún PAKE. Librería criptográfica madura (MIT). Sólo se usa en la vinculación. |
+
+DPAPI (`ProtectedData`) viene incluido en el framework Windows Desktop; no requiere paquete.
 | `xunit.v3` | Tests | — |
 
 Nada más. Sin telemetría, sin servicios externos.
@@ -190,25 +192,29 @@ Nada más. Sin telemetría, sin servicios externos.
 | Integración Windows | Portapapeles Win32 real (lectura/escritura/marca/formatos de exclusión) | Windows, local (los runners de CI no siempre tienen escritorio interactivo) |
 | Manual / E2E | Plan con 2 PCs o VMs, Windows Server con 2 usuarios RDP, reinicios, cable/Wi-Fi | Checklist en `docs/` (Fase 1–3) |
 
-## 14. Roadmap técnico (FASE 1 en detalle)
+## 14. Roadmap técnico
 
-| Hito | Commit previsto |
+FASE 1 (MVP) — **completada**:
+
+| Hito | Estado |
 |---|---|
-| 1.1 Monitor/lector/escritor Win32 del portapapeles + marca de origen + formatos de exclusión | `feat: implement clipboard monitoring` |
-| 1.2 Identidad del dispositivo (GUID + cert, DPAPI, detección de clonado) y almacén de peers | `feat: add device identity` |
-| 1.3 Listener/dialer TLS, gestor de conexiones, heartbeat, backoff | `feat: add LAN communication` |
-| 1.4 Vinculación J-PAKE + confirmación ligada a pins | `feat: implement device pairing` |
-| 1.5 `SyncEngine` bidireccional (con política por dirección preparada) | `feat: implement bidirectional clipboard sync` |
-| 1.6 UI mínima: mostrar/introducir código, estado, logging a archivo | `feat: add pairing UI and file logging` |
+| 1.1 Monitor/lector/escritor Win32 + marca de origen + formatos de exclusión | ✅ |
+| 1.2 Identidad (GUID + cert, DPAPI, detección de clonado), peers, configuración | ✅ |
+| 1.3 Listener/dialer TLS, heartbeat, backoff, aprendizaje de IP/puerto | ✅ |
+| 1.4 Vinculación J-PAKE + confirmación ligada a pins, bloqueo tras 3 intentos | ✅ |
+| 1.5 `SyncEngine` bidireccional, textos largos por fragmentos (32 MiB) | ✅ |
+| 1.6 Bandeja, ventana principal, ventana de vinculación, log a archivo | ✅ |
 
-Fases 2–5 según el roadmap del producto (README). Fase 6 (relay) **no** se implementa.
+Siguiente — FASE 2: descubrimiento automático (UDP 47810), UI de configuración (puerto, dirección por
+dispositivo), modo oscuro, icono definitivo. FASE 3: validación en Windows Server/RDP real.
+FASE 4: instalador Inno Setup + regla de firewall + firma.
 
 ## 15. Riesgos técnicos
 
 | Riesgo | Mitigación |
 |---|---|
 | `OpenClipboard` falla porque otra app lo tiene abierto | Reintentos acotados tras el evento; nunca polling. |
-| Apps que generan muchos eventos (Excel, renderizado diferido) | Sólo se lee CF_UNICODETEXT; secuencia del portapapeles; límite 4 MiB. |
+| Apps que generan muchos eventos (Excel, renderizado diferido) | Sólo se lee CF_UNICODETEXT; secuencia del portapapeles; límite 32 MiB (no se lee si lo excede). |
 | Diferencias de SChannel: TLS 1.3 sólo en Win11/Server 2022+; claves efímeras no válidas para servidor TLS | TLS negociado por el SO (1.2 mínimo); claves persistidas al importar el PKCS#12; matriz de pruebas en SO reales. |
 | Firewall/antivirus/GPO corporativa bloquea reglas locales | Regla mínima documentada; diagnóstico claro en la UI. |
 | Wi-Fi con aislamiento de clientes impide P2P | Documentado; relay en Fase 6. |
@@ -218,11 +224,14 @@ Fases 2–5 según el roadmap del producto (README). Fase 6 (relay) **no** se im
 | Huella de memoria de WPF (~60–90 MB) | Ventana creada bajo demanda; el resto del tiempo sólo bandeja. |
 | Dependencia BouncyCastle | Aislada en la vinculación; alternativa documentada (comparación de código SAS). |
 
-## 16. Decisiones pendientes (con recomendación por defecto)
+## 16. Decisiones tomadas
 
-1. **Visibilidad del repositorio** — actualmente es **público**; se pidió privado. → Cambiarlo en *Settings → General → Danger Zone → Change visibility*.
-2. **Autoarranque en Windows Server** — ¿para todos los usuarios (HKLM\Run) o opt-in por usuario (HKCU\Run)? → *Recomendado: opt-in por usuario en Server, para todos en escritorio.*
-3. **Contenido remoto y la nube de Windows** — marcar lo recibido con `CanUploadToCloud=0` para que no suba al portapapeles en la nube/historial de Windows. → *Recomendado: sí (privacidad por defecto).*
-4. **Tamaño máximo de texto** — → *4 MiB.*
-5. **Idioma de la UI** — → *Español, con recursos preparados para inglés.*
-6. **Certificado de firma de código** (Fase 4) — compra de certificado o Azure Trusted Signing.
+| Decisión | Resultado |
+|---|---|
+| Visibilidad del repositorio | Privado. |
+| Autoarranque | Escritorio: activado por defecto (HKCU\Run). Windows Server: cada usuario lo activa (opt-in). |
+| Contenido recibido y nube de Windows | Se marca `CanUploadToCloud=0` y `CanIncludeInClipboardHistory=0`. |
+| Textos largos | Hasta 32 MiB por copia, enviados en fragmentos de 256 KiB (tramas ≤ 1 MiB). |
+| Dependencia BouncyCastle para J-PAKE | Aceptada. |
+| Idioma de la UI | Español. |
+| Firma de código | Pendiente (Fase 4). |
