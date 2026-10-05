@@ -43,7 +43,7 @@ public sealed class PinnedTlsTests : IDisposable
             },
             async client =>
             {
-                await FrameCodec.WriteAsync(client, new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, content.Format, content.Data.ToArray()), Ct);
+                await FrameCodec.WriteAsync(client, new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, content.Format, content.Length, 0, 1, content.Data.ToArray()), Ct);
                 return null;
             });
 

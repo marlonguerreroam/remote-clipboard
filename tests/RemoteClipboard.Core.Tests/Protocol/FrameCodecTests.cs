@@ -17,7 +17,7 @@ public class FrameCodecTests
     public async Task Clipboard_update_round_trips(string text)
     {
         var content = ClipboardContent.FromText(text);
-        var sent = new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, content.Format, content.Data.ToArray());
+        var sent = new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, content.Format, content.Length, 0, 1, content.Data.ToArray());
         using var stream = new MemoryStream();
 
         await FrameCodec.WriteAsync(stream, sent, Ct);
@@ -94,7 +94,7 @@ public class FrameCodecTests
     [Fact]
     public async Task Oversized_outgoing_frame_is_rejected()
     {
-        var message = new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, ClipboardFormat.Text, new byte[2048]);
+        var message = new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, ClipboardFormat.Text, 2048, 0, 1, new byte[2048]);
         using var stream = new MemoryStream();
 
         await Assert.ThrowsAsync<ProtocolException>(async () => await FrameCodec.WriteAsync(stream, message, Ct, maxFrameBytes: 1024));
@@ -105,7 +105,7 @@ public class FrameCodecTests
     public void Clipboard_message_ToString_hides_payload()
     {
         var data = Encoding.UTF8.GetBytes("contraseña123");
-        var message = new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, ClipboardFormat.Text, data);
+        var message = new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, ClipboardFormat.Text, data.Length, 0, 1, data);
 
         Assert.DoesNotContain("contraseña123", message.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain(Convert.ToBase64String(data), message.ToString(), StringComparison.Ordinal);

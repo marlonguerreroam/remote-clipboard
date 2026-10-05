@@ -6,7 +6,10 @@ namespace RemoteClipboard.Core.Clipboard;
 /// (i.e. it was written by this application after receiving remote content).</param>
 /// <param name="IsExcludedByOwner">True when the source application asked monitors to ignore the content
 /// (e.g. password managers via ExcludeClipboardContentFromMonitorProcessing).</param>
+/// <param name="IsTooLarge">True when the clipboard holds supported content that exceeds the size limit
+/// (it is not read into memory in that case).</param>
 public sealed record ClipboardChange(
     ClipboardContent? Content,
     bool HasRemoteOriginMarker,
-    bool IsExcludedByOwner);
+    bool IsExcludedByOwner,
+    bool IsTooLarge = false);

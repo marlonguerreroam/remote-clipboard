@@ -5,12 +5,21 @@ public static class ProtocolLimits
     /// <summary>Current wire protocol version, exchanged in <see cref="HelloMessage"/>.</summary>
     public const int ProtocolVersion = 1;
 
-    /// <summary>Default TCP port for the encrypted sync channel.</summary>
+    /// <summary>Preferred TCP port for the encrypted sync channel.</summary>
     public const int DefaultTcpPort = 47800;
 
-    /// <summary>Maximum clipboard payload accepted or sent (4 MiB of UTF-8 text in the MVP).</summary>
-    public const int MaxClipboardBytes = 4 * 1024 * 1024;
+    /// <summary>Last port tried when the preferred one is taken (multi-user Windows Server).</summary>
+    public const int LastTcpPort = 47809;
 
-    /// <summary>Maximum frame size: payload is base64 inside JSON (~4/3) plus envelope overhead.</summary>
-    public const int MaxFrameBytes = 6 * 1024 * 1024;
+    /// <summary>
+    /// Maximum clipboard payload (32 MiB of UTF-8, roughly 30 million characters of text).
+    /// Large content is split into <see cref="ChunkBytes"/> chunks, so frames stay small.
+    /// </summary>
+    public const int MaxClipboardBytes = 32 * 1024 * 1024;
+
+    /// <summary>Raw payload bytes per <see cref="ClipboardUpdateMessage"/>.</summary>
+    public const int ChunkBytes = 256 * 1024;
+
+    /// <summary>Maximum frame size: one chunk as base64 inside JSON plus envelope overhead.</summary>
+    public const int MaxFrameBytes = 1024 * 1024;
 }

@@ -75,6 +75,7 @@ public class ClipboardEchoGuardTests
         Assert.Equal(OutboundDecision.SkipEmpty, guard.EvaluateLocalChange(Local(string.Empty)));
         Assert.Equal(OutboundDecision.SkipUnsupported, guard.EvaluateLocalChange(new ClipboardChange(null, false, false)));
         Assert.Equal(OutboundDecision.SkipTooLarge, guard.EvaluateLocalChange(Local("123456789")));
+        Assert.Equal(OutboundDecision.SkipTooLarge, guard.EvaluateLocalChange(new ClipboardChange(null, false, false, IsTooLarge: true)));
     }
 
     /// <summary>

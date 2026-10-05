@@ -52,6 +52,11 @@ public sealed class ClipboardEchoGuard
             return OutboundDecision.SkipExcludedByOwner;
         }
 
+        if (change.IsTooLarge)
+        {
+            return OutboundDecision.SkipTooLarge;
+        }
+
         var content = change.Content;
         if (content is null || content.Format == ClipboardFormat.Unknown)
         {
