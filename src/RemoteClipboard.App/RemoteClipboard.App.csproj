@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Per-user-session tray application (composition root). WPF for the UI,
+    WinForms only for NotifyIcon (system tray).
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>RemoteClipboard.App</RootNamespace>
+    <AssemblyName>RemoteClipboard</AssemblyName>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF and WinForms both define Application, MessageBox, etc. Import WinForms explicitly where needed. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteClipboard.Core\RemoteClipboard.Core.csproj" />
+    <ProjectReference Include="..\RemoteClipboard.Windows\RemoteClipboard.Windows.csproj" />
+  </ItemGroup>
+</Project>

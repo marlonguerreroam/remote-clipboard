@@ -1,0 +1,65 @@
+# ---- Build output ----
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+out/
+*.nupkg
+*.snupkg
+
+# ---- Installer output ----
+installer/Output/
+*Setup*.exe
+
+# ---- Visual Studio / Rider / VS Code ----
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+.vscode/*
+!.vscode/extensions.json
+*.DotSettings.user
+launchSettings.local.json
+
+# ---- Test results / coverage ----
+TestResults/
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+*.coverage
+*.trx
+
+# ---- Temporary files ----
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# ---- Secrets, credentials and private keys (NEVER commit) ----
+*.pfx
+*.p12
+*.pem
+*.key
+*.snk
+*.cer
+*.crt
+*.jks
+*.keystore
+secrets.json
+*.secrets.json
+appsettings.*.local.json
+.env
+.env.*
+*.publishsettings
+identity.json
+identity.dat
+peers.json
+peers.dat
