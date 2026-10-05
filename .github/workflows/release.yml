@@ -1,9 +1,16 @@
 name: Release
 
-# Publishing a tag such as v0.1.0 builds, tests and attaches the portable build to a GitHub Release.
+# Builds, tests and attaches the portable build to a GitHub Release. Triggered by pushing a tag such as
+# v0.1.0, or manually (Actions → Release → Run workflow) with a version: the release then creates the tag
+# on the commit being built.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to create, e.g. v0.1.0'
+        required: true
 
 permissions:
   contents: write
@@ -11,7 +18,11 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    env:
+      TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
     steps:
+      - name: Validate version
+        run: if ($env:TAG -notmatch '^v\d+\.\d+\.\d+$') { throw "Version must look like v1.2.3, got '$env:TAG'" }
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
         with:
@@ -19,10 +30,10 @@ jobs:
       - name: Test
         run: dotnet test -c Release
       - name: Publish self-contained (win-x64)
-        run: dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -p:Version=$("${{ github.ref_name }}".TrimStart('v')) -o publish/RemoteClipboard
+        run: dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -p:Version=$($env:TAG.TrimStart('v')) -o publish/RemoteClipboard
       - name: Package
-        run: Compress-Archive -Path publish/RemoteClipboard/* -DestinationPath "RemoteClipboard-${{ github.ref_name }}-win-x64.zip"
+        run: Compress-Archive -Path publish/RemoteClipboard/* -DestinationPath "RemoteClipboard-$env:TAG-win-x64.zip"
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" "RemoteClipboard-${{ github.ref_name }}-win-x64.zip" --title "Remote Clipboard ${{ github.ref_name }}" --generate-notes
+        run: gh release create "$env:TAG" "RemoteClipboard-$env:TAG-win-x64.zip" --target "${{ github.sha }}" --title "Remote Clipboard $env:TAG" --generate-notes

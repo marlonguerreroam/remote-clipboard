@@ -94,7 +94,7 @@ dotnet test               # ejecuta las pruebas
 dotnet run --project src/RemoteClipboard.App   # sólo en Windows
 ```
 
-Publicar una versión: crear y subir un tag `vX.Y.Z`; el workflow *Release* compila, prueba y adjunta el
+Publicar una versión: *Actions → Release → Run workflow* con la versión (p. ej. `v0.2.0`), o subir un tag `vX.Y.Z`. El workflow *Release* compila, prueba, crea el tag y adjunta el
 ZIP portable a una GitHub Release.
 
 Publicación manual:
