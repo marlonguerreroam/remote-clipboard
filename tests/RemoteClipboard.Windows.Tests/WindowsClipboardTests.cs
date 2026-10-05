@@ -37,14 +37,14 @@ public sealed class WindowsClipboardTests : IDisposable
         Assert.True(snapshot.HasRemoteOriginMarker);
         // Content is deliberately not read for remote-origin changes.
         Assert.Null(snapshot.Content);
-        Assert.Equal(text, System.Windows.Forms.Clipboard.GetText());
+        Assert.Equal(text, RawClipboard.GetText());
     }
 
     [Theory]
     [MemberData(nameof(Samples))]
     public async Task Local_text_is_read_exactly(string text)
     {
-        await RunStaAsync(() => System.Windows.Forms.Clipboard.SetText(text));
+        RawClipboard.SetText(text);
 
         var snapshot = await _clipboard.ReadAsync(Ct);
 
@@ -58,9 +58,15 @@ public sealed class WindowsClipboardTests : IDisposable
     public async Task Local_copy_raises_change_event_without_polling()
     {
         var received = new TaskCompletionSource<ClipboardChange>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _clipboard.ClipboardChanged += (_, change) => received.TrySetResult(change);
+        _clipboard.ClipboardChanged += (_, change) =>
+        {
+            if (change.Content?.GetText() == "evento")
+            {
+                received.TrySetResult(change);
+            }
+        };
 
-        await RunStaAsync(() => System.Windows.Forms.Clipboard.SetText("evento"));
+        RawClipboard.SetText("evento");
 
         var change = await received.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
         Assert.Equal("evento", change.Content?.GetText());
@@ -69,39 +75,11 @@ public sealed class WindowsClipboardTests : IDisposable
     [Fact]
     public async Task Content_marked_private_by_its_owner_is_not_read()
     {
-        await RunStaAsync(() =>
-        {
-            var data = new System.Windows.Forms.DataObject();
-            data.SetText("contraseña123");
-            data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream([0]));
-            System.Windows.Forms.Clipboard.SetDataObject(data, copy: true);
-        });
+        RawClipboard.SetText("contraseña123", "ExcludeClipboardContentFromMonitorProcessing");
 
         var snapshot = await _clipboard.ReadAsync(Ct);
 
         Assert.True(snapshot!.IsExcludedByOwner);
         Assert.Null(snapshot.Content);
-    }
-
-    private static Task RunStaAsync(Action action)
-    {
-        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var thread = new Thread(() =>
-        {
-            try
-            {
-                action();
-                tcs.SetResult();
-            }
-#pragma warning disable CA1031
-            catch (Exception ex)
-#pragma warning restore CA1031
-            {
-                tcs.SetException(ex);
-            }
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        return tcs.Task;
     }
 }
