@@ -15,7 +15,12 @@ public static class DeviceCertificateFactory
 
     public static readonly TimeSpan Validity = TimeSpan.FromDays(3650);
 
-    public static X509Certificate2 Create(DeviceId deviceId, TimeProvider? time = null)
+    /// <summary>
+    /// Creates a new identity serialized as PKCS#12 (certificate + private key). The output is a secret:
+    /// callers must protect it at rest (DPAPI on Windows) and zero it after use. Serialization happens here,
+    /// while the freshly generated key is still exportable; imported keys are deliberately not exportable.
+    /// </summary>
+    public static byte[] CreatePkcs12(DeviceId deviceId, TimeProvider? time = null)
     {
         if (deviceId.IsEmpty)
         {
@@ -32,11 +37,17 @@ public static class DeviceCertificateFactory
         request.CertificateExtensions.Add(new X509SubjectKeyIdentifierExtension(request.PublicKey, critical: false));
 
         using var ephemeral = request.CreateSelfSigned(now.AddDays(-1), now.Add(Validity));
+        return ephemeral.Export(X509ContentType.Pkcs12);
+    }
 
-        // CreateSelfSigned yields an ephemeral key, which Windows SChannel rejects for TLS
-        // ("The credentials supplied to the package were not recognized"). Round-trip through
-        // PKCS#12 so the returned certificate is usable for TLS on every platform.
-        var pkcs12 = ExportWithPrivateKey(ephemeral);
+    /// <summary>
+    /// Creates a TLS-ready certificate. CreateSelfSigned yields an ephemeral key, which Windows SChannel
+    /// rejects ("The credentials supplied to the package were not recognized"), so it is round-tripped
+    /// through PKCS#12.
+    /// </summary>
+    public static X509Certificate2 Create(DeviceId deviceId, TimeProvider? time = null)
+    {
+        var pkcs12 = CreatePkcs12(deviceId, time);
         try
         {
             return ImportWithPrivateKey(pkcs12);
@@ -45,21 +56,6 @@ public static class DeviceCertificateFactory
         {
             CryptographicOperations.ZeroMemory(pkcs12);
         }
-    }
-
-    /// <summary>
-    /// Serializes certificate + private key as PKCS#12 for storage. The output is a secret: callers
-    /// must protect it at rest (DPAPI on Windows) and zero it after use.
-    /// </summary>
-    public static byte[] ExportWithPrivateKey(X509Certificate2 certificate)
-    {
-        ArgumentNullException.ThrowIfNull(certificate);
-        if (!certificate.HasPrivateKey)
-        {
-            throw new ArgumentException("Certificate has no private key.", nameof(certificate));
-        }
-
-        return certificate.Export(X509ContentType.Pkcs12);
     }
 
     /// <summary>

@@ -16,7 +16,4 @@
   <ItemGroup>
     <InternalsVisibleTo Include="RemoteClipboard.Windows.Tests" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
-  </ItemGroup>
 </Project>

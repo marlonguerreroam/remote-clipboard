@@ -14,4 +14,5 @@ public sealed record PairedDevice(
     DateTimeOffset PairedAtUtc,
     SyncDirection Direction = SyncDirection.Bidirectional,
     string? LastKnownHost = null,
-    int? LastKnownPort = null);
+    int? LastKnownPort = null,
+    string? OsDescription = null);

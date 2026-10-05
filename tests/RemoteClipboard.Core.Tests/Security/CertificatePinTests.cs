@@ -8,8 +8,8 @@ public class CertificatePinTests
     [Fact]
     public void Pin_survives_export_and_import()
     {
-        using var original = DeviceCertificateFactory.Create(DeviceId.New());
-        var pfx = DeviceCertificateFactory.ExportWithPrivateKey(original);
+        var pfx = DeviceCertificateFactory.CreatePkcs12(DeviceId.New());
+        using var original = DeviceCertificateFactory.ImportWithPrivateKey(pfx);
         using var reloaded = DeviceCertificateFactory.ImportWithPrivateKey(pfx);
 
         Assert.True(reloaded.HasPrivateKey);
