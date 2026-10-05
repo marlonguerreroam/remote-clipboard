@@ -20,6 +20,9 @@ public static partial class Log
     [LoggerMessage(EventId = 1006, Level = LogLevel.Warning, Message = "Could not write remote content to the clipboard")]
     public static partial void ClipboardWriteFailed(ILogger logger, Exception exception);
 
+    [LoggerMessage(EventId = 4000, Level = LogLevel.Information, Message = "Device identity {DeviceId} ({Result})")]
+    public static partial void IdentityLoaded(ILogger logger, DeviceId deviceId, string result);
+
     [LoggerMessage(EventId = 9000, Level = LogLevel.Error, Message = "Unexpected error in {Component}")]
     public static partial void UnexpectedError(ILogger logger, string component, Exception exception);
 

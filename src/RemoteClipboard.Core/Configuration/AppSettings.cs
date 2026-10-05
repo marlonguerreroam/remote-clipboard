@@ -13,6 +13,9 @@ public sealed record AppSettings
     /// <summary>First TCP port tried; the next free one up to <see cref="ProtocolLimits.LastTcpPort"/> is used if busy.</summary>
     public int PreferredPort { get; init; } = ProtocolLimits.DefaultTcpPort;
 
+    /// <summary>Set once the first-run start-with-Windows default has been applied.</summary>
+    public bool AutoStartConfigured { get; init; }
+
     public static AppSettings Load(string path)
     {
         try

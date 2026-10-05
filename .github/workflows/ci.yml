@@ -24,3 +24,20 @@ jobs:
         run: dotnet build -c Release
       - name: Test
         run: dotnet test -c Release --no-build
+
+  publish:
+    name: Portable build (win-x64)
+    needs: build-test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Publish self-contained
+        run: dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -o publish/RemoteClipboard
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RemoteClipboard-win-x64
+          path: publish/RemoteClipboard
+          retention-days: 14
