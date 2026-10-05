@@ -44,10 +44,13 @@ public sealed class PinnedTlsTests : IDisposable
             async client =>
             {
                 await FrameCodec.WriteAsync(client, new ClipboardUpdateMessage(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow, content.Format, content.Length, 0, 1, content.Data.ToArray()), Ct);
-                return null;
+                // Wait for the server to close first. Closing with unread data (e.g. a TLS 1.3 session ticket)
+                // makes Windows send RST, which can discard our message before the server reads it.
+                return await FrameCodec.ReadAsync(client, Ct);
             });
 
         Assert.Null(clientResult.Error);
+        Assert.Null(clientResult.Value);
         Assert.Null(serverResult.Error);
         var received = Assert.IsType<ClipboardUpdateMessage>(serverResult.Value);
         Assert.Equal(content.GetText(), ClipboardContent.FromBytes(received.Format, received.Data).GetText());
