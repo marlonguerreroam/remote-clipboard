@@ -21,6 +21,9 @@ public enum OutboundDecision
     /// <summary>The change was written by Remote Clipboard itself (marker present).</summary>
     SkipRemoteOrigin,
 
+    /// <summary>The user turned synchronization off.</summary>
+    SkipSyncDisabled,
+
     /// <summary>Identical to the content last synchronized in either direction (echo / re-copy).</summary>
     SkipDuplicate,
 }

@@ -20,3 +20,5 @@ dotnet_style_readonly_field = true:warning
 dotnet_diagnostic.CA2007.severity = none
 # Logging uses source-generated LoggerMessage; plain string logging is discouraged.
 dotnet_diagnostic.CA1848.severity = warning
+# Log arguments here are cheap property reads; not worth IsEnabled guards.
+dotnet_diagnostic.CA1873.severity = suggestion

@@ -44,6 +44,33 @@ public static partial class Log
     [LoggerMessage(EventId = 2002, Level = LogLevel.Warning, Message = "Rejected connection from unauthorized endpoint {RemoteEndpoint}")]
     public static partial void UnauthorizedConnection(ILogger logger, string remoteEndpoint);
 
+    [LoggerMessage(EventId = 2003, Level = LogLevel.Warning, Message = "Protocol violation by {DeviceId}: {Reason}")]
+    public static partial void ProtocolViolation(ILogger logger, DeviceId deviceId, string reason);
+
+    [LoggerMessage(EventId = 2004, Level = LogLevel.Information, Message = "Device {DeviceId} stopped responding (heartbeat timeout)")]
+    public static partial void PeerTimedOut(ILogger logger, DeviceId deviceId);
+
+    [LoggerMessage(EventId = 2005, Level = LogLevel.Information, Message = "Listening on TCP port {Port}")]
+    public static partial void Listening(ILogger logger, int port);
+
+    [LoggerMessage(EventId = 2006, Level = LogLevel.Debug, Message = "Connection attempt to {DeviceId} at {Endpoint} failed: {Reason}")]
+    public static partial void ConnectFailed(ILogger logger, DeviceId deviceId, string endpoint, string reason);
+
+    [LoggerMessage(EventId = 2007, Level = LogLevel.Debug, Message = "Inbound connection from {RemoteEndpoint} closed during handshake: {Reason}")]
+    public static partial void InboundHandshakeFailed(ILogger logger, string remoteEndpoint, string reason);
+
+    [LoggerMessage(EventId = 2008, Level = LogLevel.Information, Message = "Network change detected; reconnecting")]
+    public static partial void NetworkChanged(ILogger logger);
+
+    [LoggerMessage(EventId = 2009, Level = LogLevel.Warning, Message = "Peer announced a different device id than the paired one")]
+    public static partial void PeerIdentityMismatch(ILogger logger);
+
+    [LoggerMessage(EventId = 3002, Level = LogLevel.Information, Message = "Pairing window opened (expires {ExpiresAt:u})")]
+    public static partial void PairingWindowOpened(ILogger logger, DateTimeOffset expiresAt);
+
+    [LoggerMessage(EventId = 3003, Level = LogLevel.Information, Message = "Device unpaired: {DeviceId}")]
+    public static partial void DeviceUnpaired(ILogger logger, DeviceId deviceId);
+
     [LoggerMessage(EventId = 3000, Level = LogLevel.Information, Message = "Pairing successful with {DeviceId} ({DisplayName})")]
     public static partial void PairingSucceeded(ILogger logger, DeviceId deviceId, string displayName);
 
