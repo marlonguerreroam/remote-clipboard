@@ -67,6 +67,8 @@ jobs:
         run: .github/scripts/build-msix.ps1 -Version ($env:TAG.TrimStart('v')) -SourceDir publish/RemoteClipboard -OutputPath "msix/RemoteClipboard-$env:TAG-store.msix" -IdentityName $env:MSIX_IDENTITY_NAME -Publisher $env:MSIX_PUBLISHER -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME -DisplayName $env:MSIX_DISPLAY_NAME
       - name: Build MSIX for testing (self-signed, sideload)
         run: .github/scripts/build-msix.ps1 -Version ($env:TAG.TrimStart('v')) -SourceDir publish/RemoteClipboard -OutputPath "msix/RemoteClipboard-$env:TAG-test.msix" -TestSign
+      - name: Publish license tool (author only)
+        run: dotnet publish tools/RemoteClipboard.LicenseTool -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:DebugType=none -o msix
       - name: Upload binaries to a private draft release
         env:
           GH_TOKEN: ${{ github.token }}

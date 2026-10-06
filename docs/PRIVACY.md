@@ -14,6 +14,7 @@ explícitamente**, dentro de tu red local. Esta política explica qué datos man
 | Nombre del equipo, versión de Windows, direcciones IP de la red local | Mostrarte qué equipos están conectados y encontrarlos en tu red. | Tu equipo y tus equipos vinculados. |
 | Identidad del dispositivo (identificador aleatorio y clave criptográfica) | Autenticar a tus equipos vinculados. | Tu equipo, cifrada con la protección de datos de Windows (DPAPI) de tu usuario. |
 | Lista de equipos vinculados y preferencias | Funcionamiento de la aplicación. | Tu equipo. |
+| Clave de licencia (nombre del titular, edición, fecha) y fecha de inicio de la prueba | Comprobar la licencia **sin conexión**. | Tu equipo, cifradas con DPAPI. Nunca se envían a ningún servidor. |
 | Registros técnicos (logs) | Diagnosticar problemas. Nunca contienen el texto copiado ni códigos de vinculación. | Tu equipo, 7 días como máximo. |
 
 ## Lo que la aplicación NO hace

@@ -10,6 +10,7 @@ using RemoteClipboard.Core.Agent;
 using RemoteClipboard.Core.Configuration;
 using RemoteClipboard.Core.Devices;
 using RemoteClipboard.Core.Discovery;
+using RemoteClipboard.Core.Licensing;
 using RemoteClipboard.Core.Logging;
 using RemoteClipboard.Core.Networking;
 using RemoteClipboard.Core.Sync;
@@ -31,9 +32,11 @@ internal sealed class AppController : IAsyncDisposable
     private TrayIcon? _tray;
     private MainWindow? _mainWindow;
     private PairingWindow? _pairingWindow;
+    private System.Windows.Threading.DispatcherTimer? _licenseTimer;
 
-    private AppController(ILoggerFactory loggerFactory, DeviceIdentity identity, WindowsClipboard clipboard, RemoteClipboardAgent agent, AppSettings settings, string settingsPath)
+    private AppController(ILoggerFactory loggerFactory, DeviceIdentity identity, WindowsClipboard clipboard, RemoteClipboardAgent agent, AppSettings settings, string settingsPath, LicenseManager licensing)
     {
+        Licensing = licensing;
         _loggerFactory = loggerFactory;
         _identity = identity;
         _clipboard = clipboard;
@@ -44,6 +47,9 @@ internal sealed class AppController : IAsyncDisposable
     }
 
     public RemoteClipboardAgent Agent { get; }
+
+    /// <summary>Trial and license (off in the Microsoft Store version: the Store sells it).</summary>
+    public LicenseManager Licensing { get; }
 
     /// <summary>Name announced to other devices (as configured when the agent started).</summary>
     public string DisplayName { get; }
@@ -112,7 +118,17 @@ internal sealed class AppController : IAsyncDisposable
             SyncEnabled = settings.SyncEnabled,
         };
 
-        var controller = new AppController(loggerFactory, identity, clipboard, agent, settings, settingsPath);
+        var licensing = new LicenseManager(
+            new DpapiSecretStore(AppPaths.SecretsDirectory),
+            PackageInfo.IsPackaged ? null : LicensingConfig.CreatePublicKey(),
+            TimeProvider.System);
+        Log.LicenseState(startupLog, licensing.State.ToString());
+        if (!licensing.IsSyncAllowed)
+        {
+            agent.SyncEnabled = false; // trial over: everything works except synchronization
+        }
+
+        var controller = new AppController(loggerFactory, identity, clipboard, agent, settings, settingsPath, licensing);
         controller.ApplyFirstRunDefaults();
         return controller;
     }
@@ -122,6 +138,9 @@ internal sealed class AppController : IAsyncDisposable
         Theme.Apply(_settings.Theme);
         Agent.Start();
         _tray = new TrayIcon(this);
+        _licenseTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+        _licenseTimer.Tick += (_, _) => EnforceLicense(); // the trial can end while the app runs
+        _licenseTimer.Start();
         Agent.StateChanged += (_, _) => OnUi(RefreshUi);
         Agent.Paired += (_, device) => OnUi(() => _tray?.Notify("Dispositivo vinculado", $"{device.DisplayName} ya comparte el portapapeles con este equipo."));
         RefreshUi();
@@ -214,6 +233,12 @@ internal sealed class AppController : IAsyncDisposable
 
     public void SetSyncEnabled(bool enabled)
     {
+        if (enabled && !Licensing.IsSyncAllowed)
+        {
+            RefreshUi(); // snap the switch back; the UI explains why
+            return;
+        }
+
         Agent.SyncEnabled = enabled;
         SaveSettings(_settings with { SyncEnabled = enabled });
     }
@@ -239,11 +264,51 @@ internal sealed class AppController : IAsyncDisposable
 
     public void Unpair(DeviceId id) => Agent.Unpair(id);
 
+    public LicenseCheck ActivateLicense(string key)
+    {
+        var check = Licensing.Activate(key);
+        var log = _loggerFactory.CreateLogger("Licensing");
+        if (check.IsValid)
+        {
+            Log.LicenseActivated(log, check.License!.Edition.ToString());
+            if (_settings.SyncEnabled)
+            {
+                Agent.SyncEnabled = true;
+            }
+        }
+        else
+        {
+            Log.LicenseRejected(log, check.Status.ToString());
+        }
+
+        RefreshUi();
+        return check;
+    }
+
+    public void DeactivateLicense()
+    {
+        Licensing.Deactivate();
+        EnforceLicense();
+        RefreshUi();
+    }
+
+    private void EnforceLicense()
+    {
+        if (!Licensing.IsSyncAllowed && Agent.SyncEnabled)
+        {
+            Agent.SyncEnabled = false;
+            Log.LicenseState(_loggerFactory.CreateLogger("Licensing"), Licensing.State.ToString());
+        }
+
+        RefreshUi();
+    }
+
     public static void Exit() => Application.Current.Shutdown();
 
     /// <summary>Releases UI-thread resources (tray icon, theme hooks). Call on the UI thread, before <see cref="DisposeAsync"/>.</summary>
     public void DisposeUi()
     {
+        _licenseTimer?.Stop();
         _tray?.Dispose();
         _tray = null;
         Theme.Dispose();
@@ -258,6 +323,7 @@ internal sealed class AppController : IAsyncDisposable
         await Agent.DisposeAsync().ConfigureAwait(false);
         _clipboard.Dispose();
         _identity.Dispose();
+        Licensing.Dispose();
         _loggerFactory.Dispose();
     }
 

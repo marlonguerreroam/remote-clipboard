@@ -3,6 +3,7 @@
 
 using System.Collections.ObjectModel;
 using RemoteClipboard.App.Services;
+using RemoteClipboard.Core.Licensing;
 
 namespace RemoteClipboard.App.ViewModels;
 
@@ -34,9 +35,11 @@ internal sealed class MainViewModel : ObservableObject
         }
     }
 
-    public string StatusTitle => !SyncEnabled ? "En pausa" : ConnectedCount > 0 ? "Protegido" : "Esperando dispositivos";
+    public string StatusTitle => !CanSync ? "Prueba finalizada" : !SyncEnabled ? "En pausa" : ConnectedCount > 0 ? "Protegido" : "Esperando dispositivos";
 
-    public string StatusSubtitle => !SyncEnabled
+    public string StatusSubtitle => !CanSync
+        ? "Activa una licencia para seguir sincronizando (Acerca de → Licencia)"
+        : !SyncEnabled
         ? "La sincronización está desactivada"
         : ConnectedCount switch
         {
@@ -50,13 +53,47 @@ internal sealed class MainViewModel : ObservableObject
 
     public string AgentStatusTitle => SyncEnabled ? "Activo" : "En pausa";
 
-    public string AgentStatusSubtitle => SyncEnabled ? "Listo para sincronizar" : "Sincronización desactivada";
+    public string AgentStatusSubtitle => _controller.Licensing.State switch
+    {
+        LicenseState.Trial => $"Prueba: {DaysText(_controller.Licensing.TrialDaysLeft)}",
+        LicenseState.TrialExpired => "Prueba finalizada",
+        _ => SyncEnabled ? "Listo para sincronizar" : "Sincronización desactivada",
+    };
+
+    /// <summary>False when the trial ended without a license: the sync switch is disabled.</summary>
+    public bool CanSync => _controller.Licensing.IsSyncAllowed;
+
+    public bool ShowLicense => _controller.Licensing.State != LicenseState.NotRequired;
+
+    public bool IsLicensed => _controller.Licensing.State == LicenseState.Licensed;
+
+    public bool ShowActivation => ShowLicense && !IsLicensed;
+
+    public bool CanBuy => ShowActivation && !string.IsNullOrEmpty(LicensingConfig.PurchaseUrl);
+
+    public string LicenseTitle => _controller.Licensing.State switch
+    {
+        LicenseState.Licensed => $"Licencia {(_controller.Licensing.License!.Edition == LicenseEdition.Business ? "empresarial" : "personal")}",
+        LicenseState.Trial => $"Prueba gratuita · {DaysText(_controller.Licensing.TrialDaysLeft)}",
+        LicenseState.TrialExpired => "La prueba gratuita ha terminado",
+        _ => string.Empty,
+    };
+
+    public string LicenseDetail => _controller.Licensing.State switch
+    {
+        LicenseState.Licensed => $"A nombre de {_controller.Licensing.License!.Licensee} · emitida el {_controller.Licensing.License.Issued:dd/MM/yyyy}. ¡Gracias por tu compra!",
+        LicenseState.Trial => "Todo funciona durante la prueba. Para seguir sincronizando después, activa una licencia.",
+        LicenseState.TrialExpired => "La sincronización está desactivada. Activa una licencia para volver a usarla; tus equipos vinculados se conservan.",
+        _ => string.Empty,
+    };
 
     public string ThisDeviceName => _controller.DisplayName;
 
     public string ThisDeviceDetail => $"{_controller.OsDescription} · {_controller.LocalAddressesText}";
 
     public string ThisDeviceFingerprint => $"Huella {_controller.Fingerprint}";
+
+    private static string DaysText(int days) => days == 1 ? "queda 1 día" : $"quedan {days} días";
 
     private int ConnectedCount => Devices.Count(d => d.IsConnected);
 
@@ -85,5 +122,12 @@ internal sealed class MainViewModel : ObservableObject
         Raise(nameof(IsHealthy));
         Raise(nameof(AgentStatusTitle));
         Raise(nameof(AgentStatusSubtitle));
+        Raise(nameof(CanSync));
+        Raise(nameof(ShowLicense));
+        Raise(nameof(IsLicensed));
+        Raise(nameof(ShowActivation));
+        Raise(nameof(CanBuy));
+        Raise(nameof(LicenseTitle));
+        Raise(nameof(LicenseDetail));
     }
 }

@@ -37,6 +37,7 @@ envía por **TCP + TLS mutuo** directamente a los dispositivos vinculados.
 | [docs/TESTING.md](docs/TESTING.md) | Pruebas automáticas y plan de pruebas manuales con dos equipos |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Política de privacidad |
 | [docs/STORE.md](docs/STORE.md) | Publicación en la Microsoft Store (MSIX) |
+| [docs/LICENSING.md](docs/LICENSING.md) | Prueba gratuita, claves de licencia sin conexión y cómo emitirlas |
 
 ## Requisitos y Windows compatibles
 
@@ -49,6 +50,9 @@ envía por **TCP + TLS mutuo** directamente a los dispositivos vinculados.
 El usuario final **no necesita instalar .NET** ni otras dependencias (publicación *self-contained*).
 
 ## Instalación y uso
+
+**Prueba gratuita de 14 días**; después, la sincronización requiere una licencia (se activa en *Acerca de*,
+sin conexión a Internet). Ver [docs/LICENSING.md](docs/LICENSING.md).
 
 **Instalador listo para usar (de pago):** `RemoteClipboardSetup-vX.Y.Z.exe` se distribuye por el canal
 de venta oficial (próximamente). Instala en *Archivos de programa*, crea los accesos directos y **configura
@@ -101,6 +105,7 @@ src/RemoteClipboard.App       Aplicación WPF de bandeja (raíz de composición)
 tests/RemoteClipboard.Core.Tests     Unitarias + extremo a extremo (cualquier SO)
 tests/RemoteClipboard.Windows.Tests  Portapapeles Win32 real (sólo Windows)
 tests/RemoteClipboard.App.Tests      Temas y estilos WPF, prueba de humo (sólo Windows)
+tools/RemoteClipboard.LicenseTool    Generación de claves y emisión de licencias (solo el autor)
 docs/                         Arquitectura, seguridad, networking
 installer/                    Instalador Inno Setup
 licenses/                     Textos de licencia de los componentes de terceros

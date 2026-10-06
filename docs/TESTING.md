@@ -60,4 +60,8 @@ netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir
 | 25 | MSIX: cerrar sesión y volver a entrar | La app arranca sola en segundo plano (icono en la bandeja); en *Configuración → Aplicaciones → Inicio* aparece "Remote Clipboard" |
 | 26 | MSIX: Configuración → cambiar el nombre visible → Guardar → Reiniciar | La app se reinicia sola y conserva los equipos vinculados; Configuración muestra que el inicio con Windows se gestiona en Windows |
 | 27 | MSIX: Acerca de → Abrir registros; luego desinstalar | Se abre la carpeta de registros con archivos; tras desinstalar no quedan reglas de firewall de la app |
+| 28 | Licencias (con la clave pública configurada): primer arranque → Acerca de | "Prueba gratuita · quedan 14 días"; la barra lateral muestra los días |
+| 29 | Activar una clave emitida con `LicenseTool issue` (pegarla con saltos de línea) | "Licencia activada"; muestra titular y edición; persiste tras reiniciar |
+| 30 | Activar una clave alterada o de otra clave privada | Mensaje de error; el estado no cambia |
+| 31 | Prueba vencida (adelantar la fecha de Windows 15 días) sin licencia | "Prueba finalizada"; el interruptor de sincronización queda deshabilitado; al activar una licencia vuelve a sincronizar |
 | 19 | Bandeja → Salir; volver a abrir la app. Repetir con Configuración → Guardar → "Reiniciar ahora" | La app se cierra del todo (no queda `RemoteClipboard.exe` en el Administrador de tareas) y vuelve a abrir |
