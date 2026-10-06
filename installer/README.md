@@ -12,6 +12,7 @@ dotnet publish src\RemoteClipboard.App -c Release -r win-x64 --self-contained -p
 
 | Acción | Detalle |
 |---|---|
+| Licencia | Muestra la GPL-3.0 antes de instalar; `LICENSE.txt`, `THIRD-PARTY-NOTICES.md` y `licenses\` quedan junto al ejecutable |
 | Archivos | `C:\Program Files\Remote Clipboard` (por equipo: sirve para todos los usuarios, también en Windows Server) |
 | Accesos directos | Menú Inicio; escritorio opcional |
 | Firewall | Dos reglas de entrada: TCP 47800-47809 y UDP 47810, sólo para `RemoteClipboard.exe`, sólo **subred local** y perfiles **Privado/Dominio** (nunca Público) |
@@ -27,4 +28,4 @@ El pipeline firma el `.exe` y el instalador **sólo si** existen los secretos de
 `CODESIGN_PFX_BASE64` (certificado .pfx en base64) y `CODESIGN_PFX_PASSWORD`
 (*Settings → Secrets and variables → Actions*). Sin certificado, Windows SmartScreen mostrará
 "Editor desconocido" (Más información → Ejecutar de todas formas). Opciones: certificado OV/EV de una CA,
-o Azure Trusted Signing.
+o Azure Trusted Signing. Si el repositorio es público, SignPath Foundation firma proyectos de código abierto sin coste.

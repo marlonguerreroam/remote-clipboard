@@ -1,3 +1,6 @@
+﻿; Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+; SPDX-License-Identifier: GPL-3.0-only
+;
 ; Remote Clipboard — Inno Setup 6 script.
 ;
 ; Build (Windows):
@@ -26,7 +29,10 @@ AppId={{6F1C3B52-8E0A-4C7B-9D3E-2A5F7C1B9E44}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=Remote Clipboard
+AppPublisher=Marlon Andrés Guerrero Meriño
+AppCopyright=Copyright © 2026 Marlon Andrés Guerrero Meriño
+; Shown before installing: the GPL-3.0 license (English is the only official text).
+LicenseFile=..\LICENSE
 VersionInfoVersion={#AppVersion}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}

@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Globalization;
 using System.Windows;
 using RemoteClipboard.App.Services;
@@ -30,7 +33,7 @@ public sealed partial class SettingsWindow : Window
             AppTheme.Dark => ThemeDark,
             _ => ThemeSystem,
         }).IsChecked = true;
-        AboutText.Text = $"Remote Clipboard {AppController.Version}\nID del dispositivo: {controller.DeviceIdText}\nHuella de la clave: {controller.Fingerprint}";
+        AboutText.Text = $"Remote Clipboard {AppController.Version}\n© 2026 Marlon Andrés Guerrero Meriño · Licencia GPL-3.0 (LICENSE.txt en la carpeta de instalación)\nID del dispositivo: {controller.DeviceIdText}\nHuella de la clave: {controller.Fingerprint}";
         Closed += (_, _) =>
         {
             if (!_saved)

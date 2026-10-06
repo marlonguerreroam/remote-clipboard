@@ -9,7 +9,9 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <!-- Allows building the Windows-only projects from Linux/macOS (CI, containers). They only run on Windows. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <Company>Remote Clipboard</Company>
+    <Authors>Marlon Andrés Guerrero Meriño</Authors>
+    <Company>Marlon Andrés Guerrero Meriño</Company>
+    <Copyright>Copyright © 2026 Marlon Andrés Guerrero Meriño. Licencia GPL-3.0-only.</Copyright>
     <Product>Remote Clipboard</Product>
     <Version>0.1.0</Version>
     <Deterministic>true</Deterministic>

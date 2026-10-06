@@ -93,6 +93,7 @@ tests/RemoteClipboard.Core.Tests     Unitarias + extremo a extremo (cualquier SO
 tests/RemoteClipboard.Windows.Tests  Portapapeles Win32 real (sólo Windows)
 docs/                         Arquitectura, seguridad, networking
 installer/                    Instalador Inno Setup
+licenses/                     Textos de licencia de los componentes de terceros
 ```
 
 ## Desarrollo y compilación
@@ -113,6 +114,8 @@ Publicación manual:
 ```bash
 dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true
 ```
+
+Para contribuir lee [CONTRIBUTING.md](CONTRIBUTING.md) (incluye el acuerdo de licencia de contribución).
 
 Reglas del repositorio: nada de secretos en Git (ver `.gitignore`), nunca registrar contenido del
 portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convencionales (`feat:`, `fix:`, `docs:`, `chore:`).
@@ -136,3 +139,27 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 - Varios usuarios RDP simultáneos en el mismo servidor: diseñado para aislarlos, pendiente de validación manual.
 - Sin firma de código hasta disponer de un certificado (SmartScreen muestra "Editor desconocido").
 - Sin búsqueda automática de actualizaciones (por privacidad: la app no contacta Internet).
+
+## Licencia
+
+Copyright © 2026 **Marlon Andrés Guerrero Meriño**. Todos los derechos no concedidos expresamente quedan
+reservados.
+
+Remote Clipboard es software libre bajo la **[GNU General Public License v3.0](LICENSE)** (`GPL-3.0-only`):
+
+- Puedes usarlo, estudiarlo, modificarlo y compartirlo, también en empresas.
+- Si distribuyes la aplicación o una versión modificada, **incluso cobrando por ella**, debes entregar
+  el código fuente completo bajo la misma GPL-3.0, conservar los avisos de autoría y de licencia, e
+  indicar tus cambios. **No se permite convertirlo en software cerrado.**
+- El nombre y el logotipo no forman parte de la licencia: las versiones modificadas deben usar otro
+  nombre e icono ([TRADEMARKS.md](TRADEMARKS.md)).
+
+**Licencia comercial:** si quieres incluir Remote Clipboard en un producto cerrado o propietario, o
+distribuirlo sin las obligaciones de la GPL-3.0, el autor ofrece licencias comerciales. Contacta a través
+del perfil de GitHub [@marlonguerreroam](https://github.com/marlonguerreroam).
+
+Componentes de terceros (todos MIT): [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Apoyar el proyecto
+
+Si Remote Clipboard te resulta útil, puedes apoyarlo con el botón **Sponsor** de este repositorio.
