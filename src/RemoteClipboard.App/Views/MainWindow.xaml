@@ -25,13 +25,13 @@
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
       <StackPanel>
-        <TextBlock Text="Remote Clipboard" FontSize="22" FontWeight="SemiBold" />
+        <TextBlock Text="Remote Clipboard" Style="{StaticResource Title}" />
         <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap">
           <Run Text="{Binding ThisDeviceName, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ThisDeviceDetail, Mode=OneWay}" />
         </TextBlock>
       </StackPanel>
-      <Button Grid.Column="1" Content="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
-              Style="{StaticResource GhostButton}" Padding="9,7" VerticalAlignment="Top"
+      <Button Grid.Column="1" Content="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="15"
+              Style="{StaticResource GhostButton}" Padding="10,9" VerticalAlignment="Top" AutomationProperties.Name="Configuración"
               ToolTip="Configuración" Click="OnSettingsClick" />
     </Grid>
 
@@ -43,20 +43,9 @@
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,14,0">
-          <Ellipse.Style>
-            <Style TargetType="Ellipse">
-              <Setter Property="Fill" Value="{DynamicResource Muted}" />
-              <Style.Triggers>
-                <DataTrigger Binding="{Binding IsHealthy}" Value="True">
-                  <Setter Property="Fill" Value="{DynamicResource Success}" />
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </Ellipse.Style>
-        </Ellipse>
+        <Ellipse Width="12" Height="12" Margin="2,0,16,0" Style="{StaticResource StatusDot}" Tag="{Binding IsHealthy}" />
         <StackPanel Grid.Column="1">
-          <TextBlock Text="{Binding StatusTitle}" FontSize="16" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding StatusTitle}" FontSize="16" FontWeight="SemiBold" FontFamily="{StaticResource DisplayFont}" />
           <TextBlock Text="{Binding StatusSubtitle}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
         </StackPanel>
         <CheckBox Grid.Column="2" Style="{StaticResource Switch}" VerticalAlignment="Center"
@@ -71,7 +60,7 @@
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
       <TextBlock Text="DISPOSITIVOS" Style="{StaticResource SectionTitle}" />
-      <Border Grid.Row="1" Style="{StaticResource Card}" Padding="6">
+      <Border Grid.Row="1" Style="{StaticResource Card}" Padding="8">
         <Grid>
           <TextBlock Text="Todavía no hay dispositivos vinculados.&#x0a;Pulsa “Vincular dispositivo” en este equipo y en el otro."
                      Style="{StaticResource Caption}" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12"
@@ -87,43 +76,15 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                       </Grid.ColumnDefinitions>
-                      <Ellipse Width="10" Height="10" Margin="0,0,14,0" VerticalAlignment="Center">
-                        <Ellipse.Style>
-                          <Style TargetType="Ellipse">
-                            <Setter Property="Fill" Value="{DynamicResource Muted}" />
-                            <Style.Triggers>
-                              <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                <Setter Property="Fill" Value="{DynamicResource Success}" />
-                              </DataTrigger>
-                            </Style.Triggers>
-                          </Style>
-                        </Ellipse.Style>
-                      </Ellipse>
+                      <Ellipse Width="10" Height="10" Margin="2,0,14,0" Style="{StaticResource StatusDot}" Tag="{Binding IsConnected}" />
                       <StackPanel Grid.Column="1">
                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" />
                         <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap">
                           <Run Text="{Binding StatusText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Detail, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding DirectionText, Mode=OneWay}" />
                         </TextBlock>
                       </StackPanel>
-                      <ToggleButton Grid.Column="2" Content="Opciones" IsChecked="{Binding ShowOptions, Mode=TwoWay}" Cursor="Hand"
-                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center">
-                        <ToggleButton.Template>
-                          <ControlTemplate TargetType="ToggleButton">
-                            <Border x:Name="Root" Background="Transparent" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1"
-                                    CornerRadius="6" Padding="12,6">
-                              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
-                            <ControlTemplate.Triggers>
-                              <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SubtleHover}" />
-                              </Trigger>
-                              <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource AccentSubtle}" />
-                              </Trigger>
-                            </ControlTemplate.Triggers>
-                          </ControlTemplate>
-                        </ToggleButton.Template>
-                      </ToggleButton>
+                      <ToggleButton Grid.Column="2" Content="Opciones" IsChecked="{Binding ShowOptions, Mode=TwoWay}"
+                                    Style="{StaticResource GlassToggle}" VerticalAlignment="Center" />
                     </Grid>
 
                     <!-- Per-device options -->

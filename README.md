@@ -19,7 +19,8 @@ sesiones RDP.
 - Reconexión automática, ejecución en segundo plano, icono en la bandeja.
 - Descubrimiento automático en la red local: al vincular eliges el equipo de una lista.
 - Por dispositivo: enviar y recibir, solo enviar o solo recibir.
-- Modo claro/oscuro que sigue a Windows.
+- Diseño *liquid glass* minimalista: superficies de vidrio translúcido, acrílico real de Windows 11
+  (22H2+) y modo claro/oscuro que sigue a Windows.
 - Privacidad: sin historial, sin nube, sin telemetría, **el contenido nunca se registra en logs**.
 
 ## Arquitectura
@@ -94,6 +95,7 @@ src/RemoteClipboard.Windows   Adaptadores Win32: portapapeles, DPAPI, instancia 
 src/RemoteClipboard.App       Aplicación WPF de bandeja (raíz de composición)
 tests/RemoteClipboard.Core.Tests     Unitarias + extremo a extremo (cualquier SO)
 tests/RemoteClipboard.Windows.Tests  Portapapeles Win32 real (sólo Windows)
+tests/RemoteClipboard.App.Tests      Temas y estilos WPF, prueba de humo (sólo Windows)
 docs/                         Arquitectura, seguridad, networking
 installer/                    Instalador Inno Setup
 licenses/                     Textos de licencia de los componentes de terceros

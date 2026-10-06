@@ -4,7 +4,7 @@
         Title="Configuración — Remote Clipboard" Width="460" SizeToContent="Height" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" Style="{StaticResource AppWindow}">
   <StackPanel Margin="24">
-    <TextBlock Text="Configuración" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,16" />
+    <TextBlock Text="Configuración" Style="{StaticResource Title}" FontSize="22" Margin="0,0,0,16" />
 
     <TextBlock Text="ESTE EQUIPO" Style="{StaticResource SectionTitle}" />
     <Border Style="{StaticResource Card}" Margin="0,0,0,16">
