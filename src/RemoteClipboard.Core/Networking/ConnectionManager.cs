@@ -322,7 +322,12 @@ public sealed class ConnectionManager : IAsyncDisposable
                     }
 
                     await FrameCodec.WriteAsync(ssl, LocalHello(), handshake.Token).ConfigureAwait(false);
-                    peer = Learn(peer, hello, remote?.Address);
+                    peer = Learn(peer.Id, hello, Normalize(remote?.Address)?.ToString());
+                    if (peer is null)
+                    {
+                        return; // unpaired during the handshake
+                    }
+
                     handedOver = true;
                     Register(new PeerConnection(client, ssl, peer, hello, isInitiator: false, _options, _time, _logger));
                     return;
@@ -485,7 +490,7 @@ public sealed class ConnectionManager : IAsyncDisposable
             }
 
             // The handshake proved the identity: this address is now verified.
-            peer = Learn(peer with { LastKnownHost = host }, hello, address: null);
+            peer = Learn(peer.Id, hello, host) ?? throw new ProtocolException("Device was unpaired during the handshake.");
             _addressHints.TryRemove(peer.Id, out _);
             Register(new PeerConnection(client, ssl, peer, hello, isInitiator: true, _options, _time, _logger));
         }
@@ -598,18 +603,18 @@ public sealed class ConnectionManager : IAsyncDisposable
         return initiator == smaller;
     }
 
-    private PairedDevice Learn(PairedDevice peer, HelloMessage hello, IPAddress? address)
+    private PairedDevice? Learn(DeviceId id, HelloMessage hello, string? verifiedHost)
     {
         // Track IP/port changes so we can dial back after the peer moves (DHCP, restarts, other port).
-        var updated = peer with
+        // Only network/display fields are touched, on the current stored record: user choices made
+        // meanwhile (sync direction, unpairing) are never overwritten.
+        return _peers.TryUpdate(id, current => current with
         {
             DisplayName = Sanitize(hello.DisplayName),
             OsDescription = Sanitize(hello.OsDescription),
-            LastKnownHost = Normalize(address)?.ToString() ?? peer.LastKnownHost,
-            LastKnownPort = hello.ListenPort > 0 ? hello.ListenPort : peer.LastKnownPort,
-        };
-        _peers.AddOrUpdate(updated);
-        return updated;
+            LastKnownHost = verifiedHost ?? current.LastKnownHost,
+            LastKnownPort = hello.ListenPort > 0 ? hello.ListenPort : current.LastKnownPort,
+        });
     }
 
     private HelloMessage LocalHello() =>

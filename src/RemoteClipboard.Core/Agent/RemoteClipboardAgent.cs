@@ -155,10 +155,7 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
     /// <summary>What this device does with <paramref name="id"/>: send and receive, only send, or only receive.</summary>
     public void SetSyncDirection(DeviceId id, SyncDirection direction)
     {
-        if (_peers.Find(id) is { } peer && peer.Direction != direction)
-        {
-            _peers.AddOrUpdate(peer with { Direction = direction });
-        }
+        _peers.TryUpdate(id, current => current with { Direction = direction });
     }
 
     /// <summary>Retry disconnected devices now.</summary>
