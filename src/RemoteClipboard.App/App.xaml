@@ -5,6 +5,8 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
+        <!-- Index 0 is swapped at runtime by ThemeManager (Light/Dark). -->
+        <ResourceDictionary Source="Themes/Light.xaml" />
         <ResourceDictionary Source="Themes/Styles.xaml" />
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>

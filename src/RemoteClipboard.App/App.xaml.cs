@@ -19,7 +19,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        if (!SingleInstanceLock.TryAcquire(AppPaths.DataDirectory, out _instanceLock))
+        if (!AcquireInstanceLock(restarting: e.Args.Contains("--restart", StringComparer.OrdinalIgnoreCase)))
         {
             // Already running for this user: bring its window to front (when it runs in this session).
             ActivationSignal.TrySignalRunningInstance();
@@ -30,7 +30,8 @@ public partial class App : Application
         try
         {
             _controller = AppController.Create();
-            _controller.Start(showWindow: !e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase));
+            _controller.Start(showWindow: !e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase)
+                || e.Args.Contains("--restart", StringComparer.OrdinalIgnoreCase));
             _activation = new ActivationSignal(() => Dispatcher.BeginInvoke(_controller.ShowMainWindow));
         }
         catch (Exception ex) when (ex is IOException or System.Net.Sockets.SocketException or UnauthorizedAccessException
@@ -40,6 +41,26 @@ public partial class App : Application
                 $"Remote Clipboard no pudo iniciarse.\n\n{ex.Message}",
                 "Remote Clipboard", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
+        }
+    }
+
+    private bool AcquireInstanceLock(bool restarting)
+    {
+        // After "restart", the previous instance may still be shutting down: wait for it (max 15 s).
+        var deadline = DateTime.UtcNow + (restarting ? TimeSpan.FromSeconds(15) : TimeSpan.Zero);
+        while (true)
+        {
+            if (SingleInstanceLock.TryAcquire(AppPaths.DataDirectory, out _instanceLock))
+            {
+                return true;
+            }
+
+            if (DateTime.UtcNow >= deadline)
+            {
+                return false;
+            }
+
+            Thread.Sleep(200);
         }
     }
 

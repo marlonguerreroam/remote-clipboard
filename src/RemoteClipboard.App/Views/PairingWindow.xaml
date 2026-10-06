@@ -35,6 +35,56 @@
     <!-- Enter code -->
     <Border x:Name="EnterPanel" Style="{StaticResource Card}" Visibility="Collapsed">
       <StackPanel>
+        <TextBlock Text="Equipos en la red" Style="{StaticResource Caption}" />
+        <TextBlock x:Name="DiscoveryEmpty" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,0" FontStyle="Italic" />
+        <ItemsControl x:Name="DiscoveredList" Margin="0,4,0,12">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Click="OnDiscoveredClick" Cursor="Hand" Margin="0,0,0,6" HorizontalContentAlignment="Stretch"
+                      Foreground="{DynamicResource TextPrimary}">
+                <Button.Template>
+                  <ControlTemplate TargetType="Button">
+                    <Border x:Name="Root" Background="{DynamicResource InputBackground}" BorderBrush="{DynamicResource CardBorder}"
+                            BorderThickness="1" CornerRadius="6" Padding="10,7">
+                      <ContentPresenter />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Button.Template>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <StackPanel>
+                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                    <TextBlock Style="{StaticResource Caption}">
+                      <Run Text="{Binding OsDescription, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Address, Mode=OneWay}" />
+                    </TextBlock>
+                  </StackPanel>
+                  <Border Grid.Column="1" Background="{DynamicResource AccentSubtle}" CornerRadius="9" Padding="8,2" VerticalAlignment="Center">
+                    <Border.Style>
+                      <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding AcceptingPairing}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Border.Style>
+                    <TextBlock Text="Mostrando código" FontSize="11" Foreground="{DynamicResource Accent}" />
+                  </Border>
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <TextBlock Text="Dirección del otro equipo (IP o IP:puerto)" Style="{StaticResource Caption}" />
         <TextBox x:Name="AddressBox" Style="{StaticResource Input}" Margin="0,4,0,12" />
         <TextBlock Text="Código mostrado en el otro equipo" Style="{StaticResource Caption}" />
