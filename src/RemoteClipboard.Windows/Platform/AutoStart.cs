@@ -26,8 +26,28 @@ public static class AutoStart
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
         using var key = Registry.CurrentUser.CreateSubKey(RunKey, writable: true);
-        key.SetValue(ValueName, $"\"{executablePath}\" --background", RegistryValueKind.String);
+        key.SetValue(ValueName, CommandFor(executablePath), RegistryValueKind.String);
     }
+
+    /// <summary>
+    /// If start-with-Windows is on but points to another copy (e.g. the portable build before installing),
+    /// points it to <paramref name="executablePath"/>. Returns true when the entry was changed.
+    /// </summary>
+    public static bool RepairPath(string executablePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+        using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: true);
+        if (key?.GetValue(ValueName) is not string current
+            || string.Equals(current, CommandFor(executablePath), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        key.SetValue(ValueName, CommandFor(executablePath), RegistryValueKind.String);
+        return true;
+    }
+
+    private static string CommandFor(string executablePath) => $"\"{executablePath}\" --background";
 
     public static void Disable()
     {

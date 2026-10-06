@@ -210,8 +210,12 @@ FASE 2 — **completada**: descubrimiento en la LAN (UDP 47810, sólo pista de d
 (nombre, visibilidad, puerto, tema, autoarranque), dirección de sincronización por dispositivo, modo
 oscuro que sigue a Windows, icono definitivo (`tools/generate-icon.py`).
 
-Siguiente — FASE 3: validación en Windows Server/RDP real. FASE 4: instalador Inno Setup + reglas de
-firewall + firma.
+FASE 3 — validada manualmente por el usuario en un Windows Server real.
+
+FASE 4 — **completada**: instalador Inno Setup (`installer/`) con reglas de firewall mínimas, actualización
+encima conservando datos, reparación automática de la ruta de inicio con Windows, release con instalador
++ ZIP portable, firma de código condicionada a que existan los secretos del certificado. Sin
+comprobación automática de actualizaciones (privacidad: la app no contacta Internet).
 
 ## 15. Riesgos técnicos
 
