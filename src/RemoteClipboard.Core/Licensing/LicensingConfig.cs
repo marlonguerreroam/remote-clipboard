@@ -13,7 +13,7 @@ namespace RemoteClipboard.Core.Licensing;
 public static class LicensingConfig
 {
     /// <summary>SubjectPublicKeyInfo (base64) printed by <c>LicenseTool keygen</c>.</summary>
-    public const string PublicKey = "";
+    public const string PublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEh8nb/LS6jXKXb74kcYRhfuy1FmRuv35Wg9PDn8oeCZOo/bPpVVo5gvKTnYqbUjFIbxptVlFc/x+2jHGuOsbMrQ==";
 
     /// <summary>Purchase page; the "Buy" button is hidden while empty.</summary>
     public const string PurchaseUrl = "";

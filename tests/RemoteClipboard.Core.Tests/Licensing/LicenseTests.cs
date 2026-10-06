@@ -109,6 +109,15 @@ public sealed class LicenseTests : IDisposable
         Assert.Throws<ArgumentException>(() => LicenseKeyFormat.Issue(Sample with { Licensee = "a\u0007b" }, _privateKey));
 
     [Fact]
+    public void Embedded_public_key_is_a_valid_P256_key()
+    {
+        using var key = LicensingConfig.CreatePublicKey();
+
+        Assert.NotNull(key);
+        Assert.Equal(256, key.KeySize);
+    }
+
+    [Fact]
     public void Without_public_key_no_license_is_required()
     {
         using var manager = new LicenseManager(_store, null, _time);
