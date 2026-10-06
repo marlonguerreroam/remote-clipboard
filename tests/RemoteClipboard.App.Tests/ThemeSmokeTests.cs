@@ -9,6 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using RemoteClipboard.App.Services;
+using RemoteClipboard.App.Views;
 using RemoteClipboard.Core.Configuration;
 
 namespace RemoteClipboard.App.Tests;
@@ -42,6 +43,11 @@ public sealed class ThemeSmokeTests
             try
             {
                 window.UpdateLayout();
+                var menu = new ContextMenu { PlacementTarget = window, Items = { new MenuItem { Header = "Desvincular" } } };
+                menu.IsOpen = true; // glass context menu template
+                Drain(window.Dispatcher);
+                menu.IsOpen = false;
+
                 foreach (var toggle in toggles)
                 {
                     toggle.IsChecked = true; // starts the switch storyboard
@@ -68,7 +74,8 @@ public sealed class ThemeSmokeTests
         var switchBox = new CheckBox { Style = Style("Switch"), Content = "Switch" };
         var segment = new RadioButton { Style = Style("Segment"), Content = "Segment", IsChecked = true };
         var options = new ToggleButton { Style = Style("GlassToggle"), Content = "Opciones" };
-        toggles = [switchBox, segment, options];
+        var nav = new RadioButton { Style = Style("NavItem"), Content = "Dispositivos", Tag = "\uE7F4" };
+        toggles = [switchBox, segment, options, nav];
 
         var panel = new StackPanel
         {
@@ -86,6 +93,12 @@ public sealed class ThemeSmokeTests
                 switchBox,
                 new Ellipse { Style = Style("StatusDot"), Width = 10, Height = 10, Tag = true },
                 new Ellipse { Style = Style("StatusDot"), Width = 10, Height = 10, Tag = false },
+                new Border { Style = Style("Sidebar"), Child = nav },
+                new Border { Style = Style("Panel"), Child = new Border { Style = Style("IconTile"), Child = new TextBlock { Style = Style("Glyph"), Text = "\uE7F4" } } },
+                new Rectangle { Style = Style("Divider") },
+                new Button { Style = Style("IconButton"), Content = "\uE713" },
+                new Button { Style = Style("IconButtonFlat"), Content = "\uE712" },
+                new SettingsPage { Height = 600 }, // real page XAML (not attached to a controller)
             },
         };
 

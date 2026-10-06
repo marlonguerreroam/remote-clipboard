@@ -210,6 +210,10 @@ FASE 2 — **completada**: descubrimiento en la LAN (UDP 47810, sólo pista de d
 (nombre, visibilidad, puerto, tema, autoarranque), dirección de sincronización por dispositivo, modo
 oscuro que sigue a Windows, icono definitivo (`tools/generate-icon.py`).
 
+**Ventana principal:** barra lateral (Dispositivos, Configuración, Acerca de, estado del agente) y
+panel de contenido; Configuración es una página (`Views/SettingsPage`) con vista previa del tema que se
+deshace al salir sin guardar. Vincular sigue siendo un diálogo.
+
 **Diseño visual (*liquid glass*):** colores en `Themes/Light.xaml` y `Themes/Dark.xaml` (mismas claves),
 formas y comportamiento en `Themes/Styles.xaml`: tarjetas de vidrio translúcido con borde iluminado,
 botones en cápsula, interruptor animado, control segmentado con relieve y dos brillos de color de fondo

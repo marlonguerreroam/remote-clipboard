@@ -59,7 +59,7 @@ rama). Con el .NET SDK 10 puedes compilar la app y el instalador como se explica
 [Desarrollo y compilación](#desarrollo-y-compilación) e [installer/README.md](installer/README.md).
 La versión compilada por terceros no está firmada ni tiene soporte.
 
-Configuración (icono ⚙ de la ventana o menú de la bandeja): nombre visible, visibilidad en la red,
+Configuración (barra lateral, icono ⚙ o menú de la bandeja): nombre visible, visibilidad en la red,
 puerto, tema e inicio con Windows.
 
 ### Vinculación de dispositivos

@@ -1,6 +1,7 @@
 # Copyright (c) 2026 Marlon Andrés Guerrero Meriño
 # SPDX-License-Identifier: GPL-3.0-only
-"""Generates src/RemoteClipboard.App/Assets/app.ico (multi-resolution) and docs/images/icon.png.
+"""Generates src/RemoteClipboard.App/Assets/app.ico (multi-resolution), Assets/icon.png (in-app logo)
+and docs/images/icon.png.
 
 Usage: python tools/generate-icon.py   (requires Pillow)
 Design: blue gradient tile, white clipboard, blue two-way arrow (synchronization).
@@ -53,6 +54,7 @@ def main() -> None:
     image = master()
     (ROOT / "docs" / "images").mkdir(parents=True, exist_ok=True)
     image.resize((256, 256), Image.LANCZOS).save(ROOT / "docs" / "images" / "icon.png")
+    image.resize((256, 256), Image.LANCZOS).save(OUT_DIR / "icon.png")
     image.save(OUT_DIR / "app.ico", sizes=[(s, s) for s in SIZES])
     print(f"Wrote {OUT_DIR / 'app.ico'}")
 

@@ -2,127 +2,261 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:RemoteClipboard.App.Views"
-        Title="Remote Clipboard" Width="520" Height="640" MinWidth="440" MinHeight="480"
+        Title="Remote Clipboard" Width="1000" Height="700" MinWidth="860" MinHeight="600"
         WindowStartupLocation="CenterScreen" Style="{StaticResource AppWindow}">
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     <views:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
     <views:EnumEqualsConverter x:Key="EnumEquals" />
+    <BitmapImage x:Key="Logo" UriSource="pack://application:,,,/RemoteClipboard;component/Assets/icon.png" />
   </Window.Resources>
 
-  <Grid Margin="24">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-      <RowDefinition Height="Auto" />
-    </Grid.RowDefinitions>
+  <Grid Margin="14">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="236" />
+      <ColumnDefinition Width="14" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
 
-    <!-- Header -->
-    <Grid Grid.Row="0" Margin="2,0,0,18">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <StackPanel>
-        <TextBlock Text="Remote Clipboard" Style="{StaticResource Title}" />
-        <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap">
-          <Run Text="{Binding ThisDeviceName, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ThisDeviceDetail, Mode=OneWay}" />
-        </TextBlock>
-      </StackPanel>
-      <Button Grid.Column="1" Content="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="15"
-              Style="{StaticResource GhostButton}" Padding="10,9" VerticalAlignment="Top" AutomationProperties.Name="Configuración"
-              ToolTip="Configuración" Click="OnSettingsClick" />
-    </Grid>
-
-    <!-- Status -->
-    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,18">
+    <!-- Sidebar -->
+    <Border Style="{StaticResource Sidebar}">
       <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="Auto" />
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-        <Ellipse Width="12" Height="12" Margin="2,0,16,0" Style="{StaticResource StatusDot}" Tag="{Binding IsHealthy}" />
-        <StackPanel Grid.Column="1">
-          <TextBlock Text="{Binding StatusTitle}" FontSize="16" FontWeight="SemiBold" FontFamily="{StaticResource DisplayFont}" />
-          <TextBlock Text="{Binding StatusSubtitle}" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal" Margin="8,6,8,22">
+          <Image Source="{StaticResource Logo}" Width="36" Height="36" RenderOptions.BitmapScalingMode="HighQuality" />
+          <TextBlock Text="Remote Clipboard" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
+                     VerticalAlignment="Center" Margin="12,0,0,0" />
         </StackPanel>
-        <CheckBox Grid.Column="2" Style="{StaticResource Switch}" VerticalAlignment="Center"
-                  IsChecked="{Binding SyncEnabled, Mode=TwoWay}" ToolTip="Sincronización ON/OFF" />
+        <StackPanel Grid.Row="1">
+          <RadioButton x:Name="NavDevices" GroupName="Nav" Style="{StaticResource NavItem}" Tag="&#xE7F4;" Content="Dispositivos"
+                       IsChecked="True" Checked="OnNavigate" />
+          <RadioButton x:Name="NavSettings" GroupName="Nav" Style="{StaticResource NavItem}" Tag="&#xE713;" Content="Configuración"
+                       Checked="OnNavigate" />
+          <RadioButton x:Name="NavAbout" GroupName="Nav" Style="{StaticResource NavItem}" Tag="&#xE946;" Content="Acerca de"
+                       Checked="OnNavigate" />
+        </StackPanel>
+        <Grid Grid.Row="3" Margin="10,0,10,6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Ellipse Width="9" Height="9" Margin="2,0,12,0" Style="{StaticResource StatusDot}" Tag="{Binding SyncEnabled}" />
+          <StackPanel Grid.Column="1">
+            <TextBlock Text="{Binding AgentStatusTitle}" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding AgentStatusSubtitle}" Style="{StaticResource Caption}" FontSize="11" />
+          </StackPanel>
+        </Grid>
       </Grid>
     </Border>
 
-    <!-- Devices -->
-    <Grid Grid.Row="2">
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="*" />
-      </Grid.RowDefinitions>
-      <TextBlock Text="DISPOSITIVOS" Style="{StaticResource SectionTitle}" />
-      <Border Grid.Row="1" Style="{StaticResource Card}" Padding="8">
-        <Grid>
-          <TextBlock Text="Todavía no hay dispositivos vinculados.&#x0a;Pulsa “Vincular dispositivo” en este equipo y en el otro."
-                     Style="{StaticResource Caption}" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12"
-                     Visibility="{Binding HasDevices, Converter={StaticResource InverseBoolToVisibility}}" />
-          <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding HasDevices, Converter={StaticResource BoolToVisibility}}">
-            <ItemsControl ItemsSource="{Binding Devices}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <StackPanel Margin="12,10">
-                    <Grid>
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
-                      <Ellipse Width="10" Height="10" Margin="2,0,14,0" Style="{StaticResource StatusDot}" Tag="{Binding IsConnected}" />
-                      <StackPanel Grid.Column="1">
-                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" />
-                        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap">
-                          <Run Text="{Binding StatusText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Detail, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding DirectionText, Mode=OneWay}" />
-                        </TextBlock>
+    <!-- Main panel -->
+    <Border Grid.Column="2" Style="{StaticResource Panel}">
+      <Grid>
+        <!-- Devices page -->
+        <Grid x:Name="DevicesPage">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <!-- Hero -->
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Image Source="{StaticResource Logo}" Width="92" Height="92" Effect="{StaticResource TileShadow}"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
+            <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
+              <TextBlock Text="Remote Clipboard" Style="{StaticResource Title}" FontSize="30" />
+              <TextBlock Text="Tu portapapeles, en todos tus dispositivos." FontSize="15" Foreground="{DynamicResource TextSecondary}" Margin="0,4,0,0" />
+              <TextBlock Style="{StaticResource Caption}" Margin="0,8,0,0" TextWrapping="Wrap">
+                <Run Text="Este equipo: " /><Run Text="{Binding ThisDeviceName, Mode=OneWay}" FontWeight="SemiBold" /><Run Text=" · " /><Run Text="{Binding ThisDeviceDetail, Mode=OneWay}" />
+              </TextBlock>
+            </StackPanel>
+            <Button Grid.Column="2" Content="&#xE713;" Style="{StaticResource IconButton}" VerticalAlignment="Top"
+                    ToolTip="Configuración" AutomationProperties.Name="Configuración" Click="OnSettingsClick" />
+          </Grid>
+
+          <!-- Status -->
+          <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,24,0,0" Padding="22,16">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <Ellipse Width="12" Height="12" Margin="2,0,18,0" Style="{StaticResource StatusDot}" Tag="{Binding IsHealthy}" />
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="{Binding StatusTitle}" FontSize="16" FontWeight="SemiBold" FontFamily="{StaticResource DisplayFont}" />
+                <TextBlock Text="{Binding StatusSubtitle}" Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,2,0,0" />
+              </StackPanel>
+              <CheckBox Grid.Column="2" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                        IsChecked="{Binding SyncEnabled, Mode=TwoWay}" ToolTip="Sincronización ON/OFF"
+                        AutomationProperties.Name="Sincronización" />
+            </Grid>
+          </Border>
+
+          <TextBlock Grid.Row="2" Text="DISPOSITIVOS" Style="{StaticResource SectionTitle}" Margin="6,26,0,10" />
+
+          <!-- Devices -->
+          <Border Grid.Row="3" Style="{StaticResource Card}" Padding="0">
+            <Grid>
+              <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24"
+                          Visibility="{Binding HasDevices, Converter={StaticResource InverseBoolToVisibility}}">
+                <Border Style="{StaticResource IconTile}" Width="56" Height="56" CornerRadius="16">
+                  <TextBlock Text="&#xE7F4;" Style="{StaticResource Glyph}" FontSize="22" />
+                </Border>
+                <TextBlock Text="Todavía no hay dispositivos vinculados" FontWeight="SemiBold" FontSize="14"
+                           HorizontalAlignment="Center" Margin="0,14,0,4" />
+                <TextBlock Text="Pulsa “Vincular dispositivo” en este equipo y en el otro." Style="{StaticResource Caption}"
+                           HorizontalAlignment="Center" />
+              </StackPanel>
+              <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding HasDevices, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Devices}" AlternationCount="100000" Margin="0,4">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel>
+                        <Rectangle x:Name="Separator" Style="{StaticResource Divider}" Margin="20,0" />
+                        <Grid Margin="20,14">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Style="{StaticResource IconTile}">
+                            <TextBlock Text="&#xE7F4;" Style="{StaticResource Glyph}" />
+                          </Border>
+                          <Ellipse Grid.Column="1" Width="10" Height="10" Margin="18,0,16,0" Style="{StaticResource StatusDot}"
+                                   Tag="{Binding IsConnected}" />
+                          <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" />
+                            <TextBlock Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,2,0,0">
+                              <Run Text="{Binding StatusText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Detail, Mode=OneWay}" />
+                            </TextBlock>
+                            <TextBlock Text="{Binding DirectionText}" Style="{StaticResource Caption}" FontSize="13" />
+                          </StackPanel>
+                          <ToggleButton Grid.Column="3" Content="Opciones" IsChecked="{Binding ShowOptions, Mode=TwoWay}"
+                                        Style="{StaticResource GlassToggle}" VerticalAlignment="Center" Margin="12,0,6,0" />
+                          <Button Grid.Column="4" Content="&#xE712;" Style="{StaticResource IconButtonFlat}" VerticalAlignment="Center"
+                                  ToolTip="Más acciones" AutomationProperties.Name="Más acciones" Click="OnMoreClick" />
+                        </Grid>
+                        <!-- Per-device options -->
+                        <Border Style="{StaticResource SegmentHost}" HorizontalAlignment="Left" Margin="84,0,20,16"
+                                Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
+                          <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="Enviar y recibir" Style="{StaticResource Segment}" Padding="12,5"
+                                         IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=Bidirectional}" />
+                            <RadioButton Content="Solo enviar" Style="{StaticResource Segment}" Padding="12,5"
+                                         IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=SendOnly}" />
+                            <RadioButton Content="Solo recibir" Style="{StaticResource Segment}" Padding="12,5"
+                                         IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=ReceiveOnly}" />
+                          </StackPanel>
+                        </Border>
                       </StackPanel>
-                      <ToggleButton Grid.Column="2" Content="Opciones" IsChecked="{Binding ShowOptions, Mode=TwoWay}"
-                                    Style="{StaticResource GlassToggle}" VerticalAlignment="Center" />
-                    </Grid>
+                      <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource TemplatedParent}}" Value="0">
+                          <Setter TargetName="Separator" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                      </DataTemplate.Triggers>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Grid>
+          </Border>
 
-                    <!-- Per-device options -->
-                    <Grid Margin="24,10,0,2" Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
-                      <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                      </Grid.ColumnDefinitions>
-                      <Border Style="{StaticResource SegmentHost}" HorizontalAlignment="Left" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                          <RadioButton Content="Enviar y recibir" Style="{StaticResource Segment}" Padding="10,4"
-                                       IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=Bidirectional}" />
-                          <RadioButton Content="Solo enviar" Style="{StaticResource Segment}" Padding="10,4"
-                                       IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=SendOnly}" />
-                          <RadioButton Content="Solo recibir" Style="{StaticResource Segment}" Padding="10,4"
-                                       IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=ReceiveOnly}" />
-                        </StackPanel>
-                      </Border>
-                      <Button Grid.Column="1" Content="Desvincular" Style="{StaticResource GhostButton}" Foreground="{DynamicResource Danger}"
-                              Margin="8,0,0,0" Click="OnUnpairClick" />
-                    </Grid>
-                  </StackPanel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </ScrollViewer>
+          <!-- Footer -->
+          <Grid Grid.Row="4" Margin="0,20,0,0">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Rectangle Grid.ColumnSpan="2" Style="{StaticResource Divider}" Margin="0,0,0,16" />
+            <TextBlock Grid.Row="1" Text="{Binding ThisDeviceFingerprint}" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="4,0,0,0" />
+            <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource PrimaryButton}" Padding="22,10" Click="OnPairClick">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="12" VerticalAlignment="Center" Margin="0,1,10,0" />
+                <TextBlock Text="Vincular dispositivo" FontSize="14" />
+              </StackPanel>
+            </Button>
+          </Grid>
         </Grid>
-      </Border>
-    </Grid>
 
-    <!-- Actions -->
-    <Grid Grid.Row="3" Margin="0,18,0,0">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <TextBlock Text="{Binding ThisDeviceFingerprint}" Style="{StaticResource Caption}" VerticalAlignment="Center" />
-      <Button Grid.Column="1" Content="+  Vincular dispositivo" Style="{StaticResource PrimaryButton}" Click="OnPairClick" />
-    </Grid>
+        <!-- Settings page -->
+        <views:SettingsPage x:Name="SettingsView" Visibility="Collapsed" />
+
+        <!-- About page -->
+        <ScrollViewer x:Name="AboutPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="Acerca de" Style="{StaticResource Title}" FontSize="26" Margin="0,0,0,20" />
+            <Border Style="{StaticResource Card}" Padding="22">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Image Source="{StaticResource Logo}" Width="64" Height="64" VerticalAlignment="Top" RenderOptions.BitmapScalingMode="HighQuality" />
+                <StackPanel Grid.Column="1" Margin="20,0,0,0">
+                  <TextBlock x:Name="AboutVersion" FontSize="18" FontWeight="SemiBold" FontFamily="{StaticResource DisplayFont}" />
+                  <TextBlock Text="© 2026 Marlon Andrés Guerrero Meriño" Style="{StaticResource Caption}" FontSize="13" Margin="0,4,0,0" />
+                  <TextBlock Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,8,0,0"
+                             Text="Software libre bajo la licencia GPL-3.0. El texto completo (LICENSE.txt) y los avisos de terceros están en la carpeta de instalación." />
+                  <TextBlock Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,8,0,0"
+                             Text="Sin historial, sin nube y sin telemetría: el contenido del portapapeles nunca se guarda ni se registra." />
+                </StackPanel>
+              </Grid>
+            </Border>
+
+            <TextBlock Text="ESTE EQUIPO" Style="{StaticResource SectionTitle}" Margin="6,24,0,10" />
+            <Border Style="{StaticResource Card}" Padding="22">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="170" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="Nombre" Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,10" />
+                <TextBlock Grid.Column="1" Text="{Binding ThisDeviceName}" FontSize="13" />
+                <TextBlock Grid.Row="1" Text="Sistema y direcciones" Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,10" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ThisDeviceDetail}" FontSize="13" TextWrapping="Wrap" />
+                <TextBlock Grid.Row="2" Text="ID del dispositivo" Style="{StaticResource Caption}" FontSize="13" Margin="0,0,0,10" />
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="AboutDeviceId" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                         Foreground="{DynamicResource TextPrimary}" FontSize="13" Padding="0" />
+                <TextBlock Grid.Row="3" Text="Huella de la clave" Style="{StaticResource Caption}" FontSize="13" />
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="AboutFingerprint" IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                         Foreground="{DynamicResource TextPrimary}" FontSize="13" Padding="0" />
+              </Grid>
+            </Border>
+
+            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+              <Button Content="Abrir registros" Style="{StaticResource GhostButton}" Click="OnOpenLogs" />
+              <Button Content="Código fuente" Style="{StaticResource GhostButton}" Margin="8,0,0,0" Click="OnOpenSource"
+                      ToolTip="https://github.com/marlonguerreroam/remote-clipboard" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Border>
   </Grid>
 </Window>

@@ -3,25 +3,33 @@
 
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using RemoteClipboard.App.Services;
 using RemoteClipboard.Core.Configuration;
 
 namespace RemoteClipboard.App.Views;
 
-public sealed partial class SettingsWindow : Window
+/// <summary>
+/// Settings page of the main window. The theme previews live while choosing; leaving the page without
+/// saving restores the saved theme.
+/// </summary>
+public sealed partial class SettingsPage : UserControl
 {
-    private readonly AppController _controller;
-    private readonly AppTheme _originalTheme;
-    private bool _saved;
+    private AppController? _controller;
+    private bool _loading;
 
-    internal SettingsWindow(AppController controller)
+    public SettingsPage() => InitializeComponent();
+
+    private AppController Controller => _controller ?? throw new InvalidOperationException("SettingsPage is not attached.");
+
+    internal void Attach(AppController controller) => _controller = controller;
+
+    /// <summary>Shows the saved values. Call when the page is opened.</summary>
+    internal void Load()
     {
-        _controller = controller;
-        InitializeComponent();
-        controller.Theme.Attach(this);
-
-        var settings = controller.Settings;
-        _originalTheme = settings.Theme;
+        var settings = Controller.Settings;
+        _loading = true;
         NameBox.Text = settings.DisplayName ?? string.Empty;
         NameHint.Text = $"Vacío = nombre del equipo ({Environment.MachineName}).";
         DiscoveryBox.IsChecked = settings.DiscoveryEnabled;
@@ -33,14 +41,17 @@ public sealed partial class SettingsWindow : Window
             AppTheme.Dark => ThemeDark,
             _ => ThemeSystem,
         }).IsChecked = true;
-        AboutText.Text = $"Remote Clipboard {AppController.Version}\n© 2026 Marlon Andrés Guerrero Meriño · Licencia GPL-3.0 (LICENSE.txt en la carpeta de instalación)\nID del dispositivo: {controller.DeviceIdText}\nHuella de la clave: {controller.Fingerprint}";
-        Closed += (_, _) =>
+        _loading = false;
+        ShowMessage(string.Empty, success: true);
+    }
+
+    /// <summary>Undoes an unsaved theme preview. Call when the page is left or the window closes.</summary>
+    internal void Leave()
+    {
+        if (_controller is not null && SelectedTheme != _controller.Settings.Theme)
         {
-            if (!_saved)
-            {
-                _controller.Theme.Apply(_originalTheme); // undo the live preview
-            }
-        };
+            _controller.Theme.Apply(_controller.Settings.Theme);
+        }
     }
 
     private AppTheme SelectedTheme =>
@@ -48,7 +59,7 @@ public sealed partial class SettingsWindow : Window
 
     private void OnThemePreview(object sender, RoutedEventArgs e)
     {
-        if (IsLoaded)
+        if (!_loading && _controller is not null)
         {
             _controller.Theme.Apply(SelectedTheme);
         }
@@ -58,11 +69,11 @@ public sealed partial class SettingsWindow : Window
     {
         if (!int.TryParse(PortBox.Text, NumberStyles.None, CultureInfo.InvariantCulture, out var port) || port is < 1024 or > 65535)
         {
-            ErrorText.Text = "El puerto debe ser un número entre 1024 y 65535.";
+            ShowMessage("El puerto debe ser un número entre 1024 y 65535.", success: false);
             return;
         }
 
-        var updated = _controller.Settings with
+        var updated = Controller.Settings with
         {
             DisplayName = AppSettings.NormalizeDisplayName(NameBox.Text),
             DiscoveryEnabled = DiscoveryBox.IsChecked == true,
@@ -70,24 +81,29 @@ public sealed partial class SettingsWindow : Window
             Theme = SelectedTheme,
         };
 
-        _saved = true;
-        var restartRequired = _controller.SaveSettings(updated, AutoStartBox.IsChecked == true);
+        var restartRequired = Controller.SaveSettings(updated, AutoStartBox.IsChecked == true);
+        ShowMessage("Cambios guardados.", success: true);
         if (restartRequired)
         {
-            var answer = MessageBox.Show(this,
+            var answer = MessageBox.Show(Window.GetWindow(this)!,
                 "Algunos cambios (nombre, visibilidad en la red o puerto) se aplican al reiniciar Remote Clipboard.\n\n¿Reiniciar ahora?",
                 "Reiniciar Remote Clipboard", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes);
             if (answer == MessageBoxResult.Yes)
             {
                 AppController.Restart();
-                return;
             }
         }
-
-        Close();
     }
 
-    private void OnCancel(object sender, RoutedEventArgs e) => Close();
+    private void OnDiscard(object sender, RoutedEventArgs e)
+    {
+        Leave();
+        Load();
+    }
 
-    private void OnOpenLogs(object sender, RoutedEventArgs e) => AppController.OpenLogsFolder();
+    private void ShowMessage(string text, bool success)
+    {
+        MessageText.Text = text;
+        MessageText.Foreground = (Brush)FindResource(success ? "Success" : "Danger");
+    }
 }
