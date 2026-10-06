@@ -20,9 +20,9 @@ tres dispositivos, y ausencia de contenido y códigos en los logs.
 
 ## Manual (dos equipos reales)
 
-Build portable: *Releases* → borrador privado `vX.Y.Z-binarios` (generado por el workflow *Release*) →
-`RemoteClipboard-vX.Y.Z-win-x64.zip`, o compilación local con `dotnet publish` (ver README) →
-descomprimir y ejecutar `RemoteClipboard.exe` en cada equipo.
+Build portable: *Releases* → borrador privado `prueba-<rama>` (lo genera el CI en cada push a una rama de
+trabajo, con el ZIP y el instalador) o `vX.Y.Z-binarios` (workflow *Release*), o compilación local con
+`dotnet publish` (ver README) → descomprimir y ejecutar `RemoteClipboard.exe` en cada equipo.
 
 Firewall (hasta que exista el instalador), en una consola de administrador de cada equipo:
 
