@@ -7,7 +7,6 @@ internal sealed class MainViewModel : ObservableObject
 {
     private readonly AppController _controller;
     private bool _syncEnabled;
-    private bool _autoStart;
 
     public MainViewModel(AppController controller)
     {
@@ -28,18 +27,6 @@ internal sealed class MainViewModel : ObservableObject
             {
                 _controller.SetSyncEnabled(value);
                 RaiseStatus();
-            }
-        }
-    }
-
-    public bool AutoStart
-    {
-        get => _autoStart;
-        set
-        {
-            if (Set(ref _autoStart, value))
-            {
-                _controller.SetAutoStart(value);
             }
         }
     }
@@ -68,16 +55,17 @@ internal sealed class MainViewModel : ObservableObject
 
     public void Refresh()
     {
+        // Keep expanded option panels open across refreshes (connection changes happen any time).
+        var expanded = Devices.Where(d => d.ShowOptions).Select(d => d.Id).ToHashSet();
         Devices.Clear();
         foreach (var status in _controller.Agent.Devices)
         {
-            Devices.Add(new DeviceItem(status));
+            Devices.Add(new DeviceItem(status, _controller, expanded.Contains(status.Device.Id)));
         }
 
         _syncEnabled = _controller.Agent.SyncEnabled;
-        _autoStart = AppController.IsAutoStartEnabled;
         Raise(nameof(SyncEnabled));
-        Raise(nameof(AutoStart));
+        Raise(nameof(ThisDeviceName));
         Raise(nameof(HasDevices));
         Raise(nameof(ThisDeviceDetail));
         RaiseStatus();

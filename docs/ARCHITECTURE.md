@@ -142,7 +142,8 @@ remote-clipboard/
 ├─ src/
 │  ├─ RemoteClipboard.Core/
 │  │  ├─ Clipboard/   (ClipboardContent, ClipboardFormat, IClipboardMonitor, IClipboardWriter)
-│  │  ├─ Devices/     (DeviceId, DeviceInfo, PairedDevice)
+│  │  ├─ Devices/     (DeviceId, identidad, PairedDevice, PeerStore)
+│  │  ├─ Discovery/   (DiscoveryService: anuncios UDP en la LAN)
 │  │  ├─ Logging/     (Log: eventos sin contenido)
 │  │  ├─ Pairing/     (PairingCode, PairingWindow; J-PAKE en Fase 1)
 │  │  ├─ Protocol/    (mensajes, FrameCodec, límites)
@@ -205,9 +206,12 @@ FASE 1 (MVP) — **completada**:
 | 1.5 `SyncEngine` bidireccional, textos largos por fragmentos (32 MiB) | ✅ |
 | 1.6 Bandeja, ventana principal, ventana de vinculación, log a archivo | ✅ |
 
-Siguiente — FASE 2: descubrimiento automático (UDP 47810), UI de configuración (puerto, dirección por
-dispositivo), modo oscuro, icono definitivo. FASE 3: validación en Windows Server/RDP real.
-FASE 4: instalador Inno Setup + regla de firewall + firma.
+FASE 2 — **completada**: descubrimiento en la LAN (UDP 47810, sólo pista de dirección), configuración
+(nombre, visibilidad, puerto, tema, autoarranque), dirección de sincronización por dispositivo, modo
+oscuro que sigue a Windows, icono definitivo (`tools/generate-icon.py`).
+
+Siguiente — FASE 3: validación en Windows Server/RDP real. FASE 4: instalador Inno Setup + reglas de
+firewall + firma.
 
 ## 15. Riesgos técnicos
 

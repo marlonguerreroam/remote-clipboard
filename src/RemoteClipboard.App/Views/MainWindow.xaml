@@ -7,6 +7,7 @@
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     <views:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
+    <views:EnumEqualsConverter x:Key="EnumEquals" />
   </Window.Resources>
 
   <Grid Margin="24">
@@ -18,12 +19,21 @@
     </Grid.RowDefinitions>
 
     <!-- Header -->
-    <StackPanel Grid.Row="0" Margin="2,0,0,18">
-      <TextBlock Text="Remote Clipboard" FontSize="22" FontWeight="SemiBold" />
-      <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0">
-        <Run Text="{Binding ThisDeviceName, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ThisDeviceDetail, Mode=OneWay}" />
-      </TextBlock>
-    </StackPanel>
+    <Grid Grid.Row="0" Margin="2,0,0,18">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <StackPanel>
+        <TextBlock Text="Remote Clipboard" FontSize="22" FontWeight="SemiBold" />
+        <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0" TextWrapping="Wrap">
+          <Run Text="{Binding ThisDeviceName, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding ThisDeviceDetail, Mode=OneWay}" />
+        </TextBlock>
+      </StackPanel>
+      <Button Grid.Column="1" Content="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+              Style="{StaticResource GhostButton}" Padding="9,7" VerticalAlignment="Top"
+              ToolTip="Configuración" Click="OnSettingsClick" />
+    </Grid>
 
     <!-- Status -->
     <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,0,0,18">
@@ -36,10 +46,10 @@
         <Ellipse Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,14,0">
           <Ellipse.Style>
             <Style TargetType="Ellipse">
-              <Setter Property="Fill" Value="{StaticResource Muted}" />
+              <Setter Property="Fill" Value="{DynamicResource Muted}" />
               <Style.Triggers>
                 <DataTrigger Binding="{Binding IsHealthy}" Value="True">
-                  <Setter Property="Fill" Value="{StaticResource Success}" />
+                  <Setter Property="Fill" Value="{DynamicResource Success}" />
                 </DataTrigger>
               </Style.Triggers>
             </Style>
@@ -70,32 +80,72 @@
             <ItemsControl ItemsSource="{Binding Devices}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Grid Margin="12,10">
-                    <Grid.ColumnDefinitions>
-                      <ColumnDefinition Width="Auto" />
-                      <ColumnDefinition Width="*" />
-                      <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Ellipse Width="10" Height="10" Margin="0,0,14,0" VerticalAlignment="Center">
-                      <Ellipse.Style>
-                        <Style TargetType="Ellipse">
-                          <Setter Property="Fill" Value="{StaticResource Muted}" />
-                          <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                              <Setter Property="Fill" Value="{StaticResource Success}" />
-                            </DataTrigger>
-                          </Style.Triggers>
-                        </Style>
-                      </Ellipse.Style>
-                    </Ellipse>
-                    <StackPanel Grid.Column="1">
-                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" />
-                      <TextBlock Style="{StaticResource Caption}">
-                        <Run Text="{Binding StatusText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Detail, Mode=OneWay}" />
-                      </TextBlock>
-                    </StackPanel>
-                    <Button Grid.Column="2" Content="Desvincular" Style="{StaticResource GhostButton}" Click="OnUnpairClick" />
-                  </Grid>
+                  <StackPanel Margin="12,10">
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <Ellipse Width="10" Height="10" Margin="0,0,14,0" VerticalAlignment="Center">
+                        <Ellipse.Style>
+                          <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="{DynamicResource Muted}" />
+                            <Style.Triggers>
+                              <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                <Setter Property="Fill" Value="{DynamicResource Success}" />
+                              </DataTrigger>
+                            </Style.Triggers>
+                          </Style>
+                        </Ellipse.Style>
+                      </Ellipse>
+                      <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" />
+                        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap">
+                          <Run Text="{Binding StatusText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding Detail, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding DirectionText, Mode=OneWay}" />
+                        </TextBlock>
+                      </StackPanel>
+                      <ToggleButton Grid.Column="2" Content="Opciones" IsChecked="{Binding ShowOptions, Mode=TwoWay}" Cursor="Hand"
+                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center">
+                        <ToggleButton.Template>
+                          <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Root" Background="Transparent" BorderBrush="{DynamicResource CardBorder}" BorderThickness="1"
+                                    CornerRadius="6" Padding="12,6">
+                              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                              <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SubtleHover}" />
+                              </Trigger>
+                              <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource AccentSubtle}" />
+                              </Trigger>
+                            </ControlTemplate.Triggers>
+                          </ControlTemplate>
+                        </ToggleButton.Template>
+                      </ToggleButton>
+                    </Grid>
+
+                    <!-- Per-device options -->
+                    <Grid Margin="24,10,0,2" Visibility="{Binding ShowOptions, Converter={StaticResource BoolToVisibility}}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <Border Style="{StaticResource SegmentHost}" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                          <RadioButton Content="Enviar y recibir" Style="{StaticResource Segment}" Padding="10,4"
+                                       IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=Bidirectional}" />
+                          <RadioButton Content="Solo enviar" Style="{StaticResource Segment}" Padding="10,4"
+                                       IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=SendOnly}" />
+                          <RadioButton Content="Solo recibir" Style="{StaticResource Segment}" Padding="10,4"
+                                       IsChecked="{Binding Direction, Converter={StaticResource EnumEquals}, ConverterParameter=ReceiveOnly}" />
+                        </StackPanel>
+                      </Border>
+                      <Button Grid.Column="1" Content="Desvincular" Style="{StaticResource GhostButton}" Foreground="{DynamicResource Danger}"
+                              Margin="8,0,0,0" Click="OnUnpairClick" />
+                    </Grid>
+                  </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -110,10 +160,7 @@
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <StackPanel VerticalAlignment="Center">
-        <CheckBox Content="Iniciar con Windows" IsChecked="{Binding AutoStart, Mode=TwoWay}" />
-        <TextBlock Text="{Binding ThisDeviceFingerprint}" Style="{StaticResource Caption}" Margin="0,4,0,0" />
-      </StackPanel>
+      <TextBlock Text="{Binding ThisDeviceFingerprint}" Style="{StaticResource Caption}" VerticalAlignment="Center" />
       <Button Grid.Column="1" Content="+  Vincular dispositivo" Style="{StaticResource PrimaryButton}" Click="OnPairClick" />
     </Grid>
   </Grid>

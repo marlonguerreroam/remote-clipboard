@@ -14,11 +14,14 @@ public sealed partial class MainWindow : Window
         ViewModel = new MainViewModel(controller);
         DataContext = ViewModel;
         InitializeComponent();
+        controller.Theme.Attach(this);
     }
 
     internal MainViewModel ViewModel { get; }
 
     private void OnPairClick(object sender, RoutedEventArgs e) => _controller.ShowPairing();
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e) => _controller.ShowSettings();
 
     private void OnUnpairClick(object sender, RoutedEventArgs e)
     {

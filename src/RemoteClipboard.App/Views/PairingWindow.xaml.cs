@@ -3,9 +3,12 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using RemoteClipboard.App.Services;
+using System.Globalization;
 using RemoteClipboard.Core.Devices;
+using RemoteClipboard.Core.Discovery;
 using RemoteClipboard.Core.Networking;
 using RemoteClipboard.Core.Pairing;
+using RemoteClipboard.Core.Protocol;
 
 namespace RemoteClipboard.App.Views;
 
@@ -19,8 +22,10 @@ public sealed partial class PairingWindow : Window
     {
         _controller = controller;
         InitializeComponent();
+        controller.Theme.Attach(this);
         _timer.Tick += (_, _) => UpdateExpiry();
         _controller.Agent.Paired += OnPairedAsHost;
+        _controller.Agent.DiscoveredDevicesChanged += OnDiscoveredChanged;
         Closed += OnClosed;
         OnShowMode(this, new RoutedEventArgs());
     }
@@ -40,7 +45,38 @@ public sealed partial class PairingWindow : Window
         _controller.Agent.ClosePairing();
         _window = null;
         _timer.Stop();
+        _controller.Agent.RefreshDiscovery();
+        RefreshDiscovered();
         AddressBox.Focus();
+    }
+
+    /// <summary>Devices found on the LAN; those showing a code first.</summary>
+    internal void RefreshDiscovered()
+    {
+        var devices = _controller.Agent.DiscoveredDevices
+            .OrderByDescending(d => d.AcceptingPairing)
+            .ThenBy(d => d.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+        DiscoveredList.ItemsSource = devices;
+        DiscoveryEmpty.Text = !_controller.Agent.IsDiscoveryEnabled
+            ? "La visibilidad en la red está desactivada (Configuración). Escribe la dirección manualmente."
+            : devices.Count == 0
+                ? "Buscando… Si el otro equipo no aparece, pulsa “Mostrar código” en él o escribe su dirección."
+                : string.Empty;
+        DiscoveryEmpty.Visibility = DiscoveryEmpty.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void OnDiscoveredClick(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not DiscoveredDevice device)
+        {
+            return;
+        }
+
+        AddressBox.Text = device.Port == ProtocolLimits.DefaultTcpPort
+            ? device.Address
+            : string.Create(CultureInfo.InvariantCulture, $"{device.Address}:{device.Port}");
+        CodeBox.Focus();
     }
 
     private void OnNewCode(object sender, RoutedEventArgs e) => OpenNewCode();
@@ -125,6 +161,8 @@ public sealed partial class PairingWindow : Window
         }
     }
 
+    private void OnDiscoveredChanged(object? sender, EventArgs e) => Dispatcher.BeginInvoke(RefreshDiscovered);
+
     private void OnPairedAsHost(object? sender, PairedDevice device) =>
         Dispatcher.BeginInvoke(() => Succeeded(device));
 
@@ -160,6 +198,7 @@ public sealed partial class PairingWindow : Window
     {
         _timer.Stop();
         _controller.Agent.Paired -= OnPairedAsHost;
+        _controller.Agent.DiscoveredDevicesChanged -= OnDiscoveredChanged;
         _controller.Agent.ClosePairing();
     }
 

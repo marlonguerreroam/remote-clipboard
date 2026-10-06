@@ -41,6 +41,54 @@ public class PeerStoreTests
     }
 
     [Fact]
+    public void Update_of_an_unpaired_device_never_resurrects_it()
+    {
+        using var dir = new TempDirectory();
+        var store = new PeerStore(dir.File("peers.json"));
+        var peer = NewPeer("PC-B");
+        store.AddOrUpdate(peer);
+        store.Remove(peer.Id);
+
+        // e.g. a handshake that started before the user clicked "Desvincular".
+        var result = store.TryUpdate(peer.Id, p => p with { LastKnownPort = 47801 });
+
+        Assert.Null(result);
+        Assert.Null(store.Find(peer.Id));
+        Assert.Null(new PeerStore(dir.File("peers.json")).Find(peer.Id));
+    }
+
+    [Fact]
+    public void Update_works_on_the_current_value_so_concurrent_changes_are_kept()
+    {
+        using var dir = new TempDirectory();
+        var store = new PeerStore(dir.File("peers.json"));
+        var peer = NewPeer("PC-B");
+        store.AddOrUpdate(peer);
+
+        store.TryUpdate(peer.Id, p => p with { Direction = SyncDirection.ReceiveOnly });      // user choice
+        store.TryUpdate(peer.Id, p => p with { LastKnownHost = "10.0.0.7", LastKnownPort = 47802 }); // handshake
+
+        var stored = new PeerStore(dir.File("peers.json")).Find(peer.Id)!;
+        Assert.Equal(SyncDirection.ReceiveOnly, stored.Direction);
+        Assert.Equal("10.0.0.7", stored.LastKnownHost);
+        Assert.Equal(47802, stored.LastKnownPort);
+    }
+
+    [Fact]
+    public void Update_cannot_change_the_device_id()
+    {
+        using var dir = new TempDirectory();
+        var store = new PeerStore(dir.File("peers.json"));
+        var peer = NewPeer("PC-B");
+        store.AddOrUpdate(peer);
+
+        var updated = store.TryUpdate(peer.Id, p => p with { Id = DeviceId.New() });
+
+        Assert.Equal(peer.Id, updated!.Id);
+        Assert.Single(store.All);
+    }
+
+    [Fact]
     public void Unreadable_file_starts_empty()
     {
         using var dir = new TempDirectory();

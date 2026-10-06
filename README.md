@@ -1,3 +1,5 @@
+<img src="docs/images/icon.png" width="72" alt="Remote Clipboard" />
+
 # Remote Clipboard
 
 Portapapeles compartido, seguro y transparente entre computadores Windows de una red local.
@@ -15,6 +17,9 @@ sesiones RDP.
 - Cifrado TLS con autenticación mutua y pinning de clave pública.
 - Prevención de bucles de sincronización (3 capas).
 - Reconexión automática, ejecución en segundo plano, icono en la bandeja.
+- Descubrimiento automático en la red local: al vincular eliges el equipo de una lista.
+- Por dispositivo: enviar y recibir, solo enviar o solo recibir.
+- Modo claro/oscuro que sigue a Windows.
 - Privacidad: sin historial, sin nube, sin telemetría, **el contenido nunca se registra en logs**.
 
 ## Arquitectura
@@ -46,13 +51,16 @@ El usuario final **no necesita instalar .NET** ni otras dependencias (publicaci�
 `RemoteClipboard-vX.Y.Z-win-x64.zip`. Descomprimir en cada equipo y ejecutar `RemoteClipboard.exe` (no
 requiere instalar .NET). Permitir la app en el firewall para redes privadas (ver [docs/TESTING.md](docs/TESTING.md)).
 Las compilaciones de cada commit también quedan 14 días como artefacto de *Actions → CI*.
+Configuración (icono ⚙ de la ventana o menú de la bandeja): nombre visible, visibilidad en la red,
+puerto, tema e inicio con Windows.
 A partir de la FASE 4: `RemoteClipboardSetup.exe`.
 
 ### Vinculación de dispositivos
 
 1. En el equipo A: icono de la bandeja → **Vincular dispositivo…** → **Mostrar código** (p. ej. `847 291`,
    válido 2 minutos). La ventana también muestra la IP de A.
-2. En el equipo B: **Vincular dispositivo…** → **Introducir código** → IP de A + código → **Vincular**.
+2. En el equipo B: **Vincular dispositivo…** → **Introducir código** → elegir A en **Equipos en la red**
+   (o escribir su IP) + código → **Vincular**.
 3. Listo: Ctrl+C en uno, Ctrl+V en el otro, en ambos sentidos. Se reconectan solos tras reinicios,
    cortes de red o cambios de IP.
 
@@ -65,7 +73,7 @@ Datos locales (por usuario): `%LOCALAPPDATA%\RemoteClipboard` — `secrets\` (id
 ## Seguridad y networking (resumen)
 
 - Puerto **TCP 47800** (47801–47809 en servidores multiusuario), sólo perfiles Privado/Dominio y subred local.
-- Puerto **UDP 47810** para descubrimiento (FASE 2, opcional).
+- Puerto **UDP 47810** para descubrimiento en la LAN (desactivable en Configuración).
 - Identidad por usuario/equipo: GUID + certificado ECDSA P-256 protegido con DPAPI.
 - Vinculación con J-PAKE + confirmación ligada a los certificados (resiste MITM y ataques offline).
 - Lo recibido no va al portapapeles en la nube ni al historial de Windows; el contenido de gestores de
@@ -110,7 +118,7 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 
 - [x] **FASE 0 — Arquitectura**: análisis, stack, estructura, primitivas base con pruebas.
 - [x] **FASE 1 — MVP**: monitor de portapapeles, identidad, TLS en LAN, vinculación, sync bidireccional, anti-loops.
-- [ ] **FASE 2 — Aplicación completa**: descubrimiento automático, configuración, modo oscuro, icono definitivo (bandeja, UI y lista de dispositivos ya existen).
+- [x] **FASE 2 — Aplicación completa**: descubrimiento automático, configuración, dirección por dispositivo, modo oscuro, icono definitivo.
 - [ ] **FASE 3 — Windows Server**: RDP, multiusuario, separación de sesiones.
 - [ ] **FASE 4 — Distribución**: instalador, autoarranque, firewall, actualización, firma.
 - [ ] **FASE 5 — Avanzado**: imágenes, archivos, historial opcional, políticas (solo enviar / solo recibir).
@@ -118,8 +126,8 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 
 ## Limitaciones conocidas
 
-- Sólo LAN y dirección IP manual (descubrimiento automático en FASE 2); redes Wi-Fi con aislamiento de
-  clientes impiden la comunicación directa.
+- Sólo LAN; redes Wi-Fi con aislamiento de clientes impiden la comunicación directa (y el descubrimiento).
+- El menú de la bandeja no sigue el modo oscuro (control de WinForms).
 - Sólo texto (imágenes/archivos en FASE 5). Máximo 32 MiB por copia.
 - Sin instalador ni regla de firewall automática hasta la FASE 4.
 - Un mismo usuario con dos sesiones simultáneas en un servidor: sólo una ejecuta el agente.

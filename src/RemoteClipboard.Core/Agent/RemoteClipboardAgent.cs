@@ -2,6 +2,7 @@ using System.Net.NetworkInformation;
 using Microsoft.Extensions.Logging;
 using RemoteClipboard.Core.Clipboard;
 using RemoteClipboard.Core.Devices;
+using RemoteClipboard.Core.Discovery;
 using RemoteClipboard.Core.Logging;
 using RemoteClipboard.Core.Networking;
 using RemoteClipboard.Core.Pairing;
@@ -20,6 +21,7 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
     private readonly IClipboardMonitor _monitor;
     private readonly ConnectionManager _connections;
     private readonly SyncEngine _sync;
+    private readonly DiscoveryService? _discovery;
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _cts = new();
     private Task? _syncLoop;
@@ -33,7 +35,8 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         IClipboardWriter writer,
         ConnectionOptions options,
         ILoggerFactory loggerFactory,
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        DiscoveryOptions? discovery = null)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         _identity = identity ?? throw new ArgumentNullException(nameof(identity));
@@ -42,7 +45,9 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         _logger = loggerFactory.CreateLogger<RemoteClipboardAgent>();
 
         _connections = new ConnectionManager(identity, info, peers, options, loggerFactory.CreateLogger<ConnectionManager>(), time);
-        _sync = new SyncEngine(identity.Id, writer, () => _connections.Connections, loggerFactory.CreateLogger<SyncEngine>(), time);
+        _sync = new SyncEngine(
+            identity.Id, writer, () => _connections.Connections, loggerFactory.CreateLogger<SyncEngine>(), time,
+            id => _peers.Find(id)?.Direction ?? SyncDirection.Bidirectional);
         _connections.MessageHandler = _sync.OnMessageAsync;
         _connections.Connected += (_, _) => RaiseStateChanged();
         _connections.Disconnected += (_, _) => RaiseStateChanged();
@@ -50,7 +55,32 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         _peers.Changed += (_, _) => RaiseStateChanged();
         _sync.ContentSent += (_, _) => ContentSent?.Invoke(this, EventArgs.Empty);
         _sync.ContentReceived += (_, id) => ContentReceived?.Invoke(this, id);
+
+        if (discovery is { Enabled: true })
+        {
+            _discovery = new DiscoveryService(
+                identity.Id,
+                () => new LocalAnnouncement(info.DisplayName, info.OsDescription, _connections.ListenPort, _connections.IsAcceptingPairing),
+                discovery,
+                loggerFactory.CreateLogger<DiscoveryService>(),
+                time);
+            // Paired devices seen on the network give the dialer a fresh (unverified) address.
+            _discovery.DeviceSeen += (_, device) => _connections.AddAddressHint(device.Id, device.Address, device.Port);
+            _discovery.DevicesChanged += (_, _) => DiscoveredDevicesChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
+
+    /// <summary>The list of devices visible on the LAN changed.</summary>
+    public event EventHandler? DiscoveredDevicesChanged;
+
+    /// <summary>Devices announcing themselves on the LAN that are not paired yet (for the pairing UI).</summary>
+    public IReadOnlyList<DiscoveredDevice> DiscoveredDevices =>
+        _discovery is null ? [] : [.. _discovery.Devices.Where(d => _peers.Find(d.Id) is null)];
+
+    public bool IsDiscoveryEnabled => _discovery is not null;
+
+    /// <summary>Ask devices on the LAN to announce themselves now.</summary>
+    public void RefreshDiscovery() => _discovery?.Query();
 
     /// <summary>Paired list or connection state changed.</summary>
     public event EventHandler? StateChanged;
@@ -89,14 +119,24 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         _syncLoop = _sync.RunAsync(_cts.Token);
         _monitor.ClipboardChanged += _sync.OnLocalClipboardChanged;
         _monitor.Start();
+        _discovery?.Start();
         NetworkChange.NetworkAddressChanged += OnNetworkChanged;
         NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
     }
 
     /// <summary>Host side: show this code on screen; it expires after two minutes or three wrong attempts.</summary>
-    public PairingWindow OpenPairing() => _connections.OpenPairingWindow();
+    public PairingWindow OpenPairing()
+    {
+        var window = _connections.OpenPairingWindow();
+        _discovery?.AnnounceNow(); // joiners see "ready to pair" immediately
+        return window;
+    }
 
-    public void ClosePairing() => _connections.ClosePairingWindow();
+    public void ClosePairing()
+    {
+        _connections.ClosePairingWindow();
+        _discovery?.AnnounceNow();
+    }
 
     /// <summary>Joiner side: pair with the device showing <paramref name="code"/>.</summary>
     public Task<PairingOutcome> PairWithAsync(string host, int port, string code, CancellationToken cancellationToken) =>
@@ -110,6 +150,12 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
             _connections.Disconnect(id);
             Log.DeviceUnpaired(_logger, id);
         }
+    }
+
+    /// <summary>What this device does with <paramref name="id"/>: send and receive, only send, or only receive.</summary>
+    public void SetSyncDirection(DeviceId id, SyncDirection direction)
+    {
+        _peers.TryUpdate(id, current => current with { Direction = direction });
     }
 
     /// <summary>Retry disconnected devices now.</summary>
@@ -126,6 +172,11 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
         _monitor.ClipboardChanged -= _sync.OnLocalClipboardChanged;
         await _cts.CancelAsync().ConfigureAwait(false);
+        if (_discovery is not null)
+        {
+            await _discovery.DisposeAsync().ConfigureAwait(false);
+        }
+
         await _connections.DisposeAsync().ConfigureAwait(false);
         if (_syncLoop is not null)
         {
@@ -145,6 +196,7 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
     {
         Log.NetworkChanged(_logger);
         _connections.Wake();
+        _discovery?.AnnounceNow();
     }
 
     private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e) => OnNetworkChanged(sender, e);

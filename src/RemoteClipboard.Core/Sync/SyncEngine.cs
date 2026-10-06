@@ -18,6 +18,7 @@ public sealed class SyncEngine
     private readonly DeviceId _localId;
     private readonly IClipboardWriter _writer;
     private readonly Func<IReadOnlyCollection<PeerConnection>> _connections;
+    private readonly Func<DeviceId, SyncDirection> _directionOf;
     private readonly ILogger _logger;
     private readonly TimeProvider _time;
     private readonly ClipboardEchoGuard _guard = new();
@@ -26,13 +27,20 @@ public sealed class SyncEngine
         Channel.CreateUnbounded<Func<CancellationToken, Task>>(new UnboundedChannelOptions { SingleReader = true });
 
     public SyncEngine(
-        DeviceId localId, IClipboardWriter writer, Func<IReadOnlyCollection<PeerConnection>> connections, ILogger logger, TimeProvider? time = null)
+        DeviceId localId,
+        IClipboardWriter writer,
+        Func<IReadOnlyCollection<PeerConnection>> connections,
+        ILogger logger,
+        TimeProvider? time = null,
+        Func<DeviceId, SyncDirection>? directionOf = null)
     {
         _localId = localId;
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _time = time ?? TimeProvider.System;
+        // Read live so a policy change applies immediately to existing connections.
+        _directionOf = directionOf ?? (_ => SyncDirection.Bidirectional);
     }
 
     public bool Enabled { get; set; } = true;
@@ -103,7 +111,7 @@ public sealed class SyncEngine
             return;
         }
 
-        var targets = _connections().Where(c => c.Peer.Direction != SyncDirection.ReceiveOnly).ToList();
+        var targets = _connections().Where(c => _directionOf(c.PeerId) != SyncDirection.ReceiveOnly).ToList();
         if (targets.Count == 0)
         {
             return;
@@ -143,7 +151,7 @@ public sealed class SyncEngine
 
     private async Task ApplyRemoteAsync(PeerConnection connection, Guid messageId, ClipboardContent content, CancellationToken cancellationToken)
     {
-        if (!_dedup.TryRegister(messageId) || !Enabled || connection.Peer.Direction == SyncDirection.SendOnly)
+        if (!_dedup.TryRegister(messageId) || !Enabled || _directionOf(connection.PeerId) == SyncDirection.SendOnly)
         {
             return;
         }

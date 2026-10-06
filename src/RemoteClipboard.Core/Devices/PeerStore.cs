@@ -69,6 +69,36 @@ public sealed class PeerStore
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Atomically updates an existing device from its CURRENT stored value. Returns null (and adds nothing)
+    /// when the device is no longer paired, so a late handshake can never resurrect an unpaired device or
+    /// overwrite a concurrent change (e.g. the sync direction) with a stale snapshot.
+    /// </summary>
+    public PairedDevice? TryUpdate(DeviceId id, Func<PairedDevice, PairedDevice> update)
+    {
+        ArgumentNullException.ThrowIfNull(update);
+        PairedDevice updated;
+        lock (_gate)
+        {
+            if (!_peers.TryGetValue(id, out var current))
+            {
+                return null;
+            }
+
+            updated = update(current) with { Id = id };
+            if (updated == current)
+            {
+                return current;
+            }
+
+            _peers[id] = updated;
+            Save();
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+        return updated;
+    }
+
     public bool Remove(DeviceId id)
     {
         lock (_gate)
