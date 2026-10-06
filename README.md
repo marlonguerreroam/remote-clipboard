@@ -35,6 +35,8 @@ envía por **TCP + TLS mutuo** directamente a los dispositivos vinculados.
 | [docs/SECURITY.md](docs/SECURITY.md) | Modelo de amenazas, identidad, TLS con pins, protocolo de vinculación, secretos, privacidad |
 | [docs/NETWORKING.md](docs/NETWORKING.md) | Puertos, firewall, topología, protocolo, reconexión, descubrimiento |
 | [docs/TESTING.md](docs/TESTING.md) | Pruebas automáticas y plan de pruebas manuales con dos equipos |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | Política de privacidad |
+| [docs/STORE.md](docs/STORE.md) | Publicación en la Microsoft Store (MSIX) |
 
 ## Requisitos y Windows compatibles
 
@@ -53,6 +55,9 @@ de venta oficial (próximamente). Instala en *Archivos de programa*, crea los ac
 el firewall automáticamente** (solo redes privadas/dominio y subred local). Para actualizar, ejecuta el
 instalador nuevo encima: se conservan la configuración y los dispositivos vinculados. Detalles en
 [installer/README.md](installer/README.md). Comprarlo apoya el desarrollo.
+
+**Microsoft Store:** versión empaquetada (MSIX) en preparación: firmada por Microsoft, con el firewall y el
+inicio con Windows gestionados por Windows. Detalles en [docs/STORE.md](docs/STORE.md).
 
 **Compilarlo tú mismo (gratis):** el código fuente completo de cada versión está en *Releases* (y en esta
 rama). Con el .NET SDK 10 puedes compilar la app y el instalador como se explica en

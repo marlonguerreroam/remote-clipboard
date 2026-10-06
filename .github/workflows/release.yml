@@ -3,7 +3,8 @@ name: Release
 # Builds and tests a version, then:
 #   - publishes the public release vX.Y.Z (tag + notes + source code, NO binaries: the ready-made
 #     installer is sold separately; anyone may still build it from source, as the GPL-3.0 allows);
-#   - attaches the installer and the portable ZIP to a DRAFT release "vX.Y.Z-binarios", visible only to
+#   - attaches the installer, the portable ZIP and the MSIX packages (Store upload + self-signed test
+#     package with its .cer) to a DRAFT release "vX.Y.Z-binarios", visible only to
 #     people with write access. Download them from there for the sales channel; never publish that draft.
 # Triggered by pushing a tag such as v0.1.0, or manually (Actions → Release → Run workflow) with a
 # version: the release then creates the tag on the commit being built.
@@ -54,11 +55,24 @@ jobs:
         env:
           CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
           CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+      - name: Build MSIX for the Microsoft Store
+        # Identity from Partner Center → the app → Product identity, stored as repository variables
+        # (Settings → Secrets and variables → Actions → Variables). Unsigned: the Store signs it.
+        if: vars.MSIX_IDENTITY_NAME != ''
+        env:
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+          MSIX_DISPLAY_NAME: ${{ vars.MSIX_DISPLAY_NAME }}
+        run: .github/scripts/build-msix.ps1 -Version ($env:TAG.TrimStart('v')) -SourceDir publish/RemoteClipboard -OutputPath "msix/RemoteClipboard-$env:TAG-store.msix" -IdentityName $env:MSIX_IDENTITY_NAME -Publisher $env:MSIX_PUBLISHER -PublisherDisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME -DisplayName $env:MSIX_DISPLAY_NAME
+      - name: Build MSIX for testing (self-signed, sideload)
+        run: .github/scripts/build-msix.ps1 -Version ($env:TAG.TrimStart('v')) -SourceDir publish/RemoteClipboard -OutputPath "msix/RemoteClipboard-$env:TAG-test.msix" -TestSign
       - name: Upload binaries to a private draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$env:TAG-binarios" "installer/Output/RemoteClipboardSetup-$env:TAG.exe" "RemoteClipboard-$env:TAG-win-x64.zip" --draft --target "${{ github.sha }}" --title "Binarios $env:TAG (privado: no publicar)" --notes "Instalador y ZIP portable para el canal de venta. Borrador privado: no lo publiques."
+          $files = @("installer/Output/RemoteClipboardSetup-$env:TAG.exe", "RemoteClipboard-$env:TAG-win-x64.zip") + (Get-ChildItem msix/*).FullName
+          gh release create "$env:TAG-binarios" @files --draft --target "${{ github.sha }}" --title "Binarios $env:TAG (privado: no publicar)" --notes "Instalador y ZIP portable para el canal de venta. Borrador privado: no lo publiques."
       - name: Create public release (source only)
         env:
           GH_TOKEN: ${{ github.token }}

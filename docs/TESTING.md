@@ -56,4 +56,8 @@ netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir
 | 21 | Con la versión portable abierta y "Iniciar con Windows" activo, instalar | La portable se cierra; tras reiniciar sesión arranca la versión instalada |
 | 22 | Instalar una versión nueva encima | Se conserva la configuración y los dispositivos vinculados |
 | 23 | Desinstalar (Configuración de Windows → Aplicaciones) | Se cierra la app, desaparecen archivos, accesos y reglas de firewall; reinstalar recupera las vinculaciones |
+| 24 | MSIX de prueba (ver [STORE.md](STORE.md)): instalar con el certificado de prueba y abrir | Arranca desde el menú Inicio; vincula y sincroniza con otro equipo sin tocar el firewall |
+| 25 | MSIX: cerrar sesión y volver a entrar | La app arranca sola en segundo plano (icono en la bandeja); en *Configuración → Aplicaciones → Inicio* aparece "Remote Clipboard" |
+| 26 | MSIX: Configuración → cambiar el nombre visible → Guardar → Reiniciar | La app se reinicia sola y conserva los equipos vinculados; Configuración muestra que el inicio con Windows se gestiona en Windows |
+| 27 | MSIX: Acerca de → Abrir registros; luego desinstalar | Se abre la carpeta de registros con archivos; tras desinstalar no quedan reglas de firewall de la app |
 | 19 | Bandeja → Salir; volver a abrir la app. Repetir con Configuración → Guardar → "Reiniciar ahora" | La app se cierra del todo (no queda `RemoteClipboard.exe` en el Administrador de tareas) y vuelve a abrir |

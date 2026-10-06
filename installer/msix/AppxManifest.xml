@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Remote Clipboard: MSIX manifest (Microsoft Store). Copyright (c) 2026 Marlon Andrés Guerrero Meriño.
+  SPDX-License-Identifier: GPL-3.0-only
+
+  Template: .github/scripts/build-msix.ps1 replaces the $(...) tokens. For the Store, the identity
+  (Name, Publisher, PublisherDisplayName) must be exactly the one shown in Partner Center →
+  the app → Product identity.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 uap10 desktop desktop2 rescap">
+
+  <Identity Name="$(IdentityName)" Publisher="$(Publisher)" Version="$(Version)" ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>$(DisplayName)</DisplayName>
+    <PublisherDisplayName>$(PublisherDisplayName)</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Portapapeles compartido, cifrado y privado entre equipos Windows de la red local.</Description>
+  </Properties>
+
+  <Dependencies>
+    <!-- 1809+: packaged desktop apps with firewall rules (1703+) and app execution aliases. -->
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="es" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="RemoteClipboard.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="$(DisplayName)"
+        Description="Portapapeles compartido, cifrado y privado entre equipos Windows de la red local."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Start with Windows, in the background. Enabled on first launch; the user can turn it off in
+             Settings → Apps → Startup or Task Manager. -->
+        <desktop:Extension Category="windows.startupTask" Executable="RemoteClipboard.exe"
+                           EntryPoint="Windows.FullTrustApplication" uap10:Parameters="--background">
+          <desktop:StartupTask TaskId="RemoteClipboardStartup" Enabled="true" DisplayName="$(DisplayName)" />
+        </desktop:Extension>
+        <!-- Lets the app relaunch itself with its package identity (restart after changing settings). -->
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="RemoteClipboard.exe"
+                        EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="RemoteClipboardApp.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Extensions>
+    <!-- Inbound rules for this executable only, never on public networks: TCP 47800-47809 (encrypted
+         sync, mutual TLS) and UDP 47810 (LAN discovery). -->
+    <desktop2:Extension Category="windows.firewallRules">
+      <desktop2:FirewallRules Executable="RemoteClipboard.exe">
+        <desktop2:Rule Direction="in" IPProtocol="TCP" Profile="domainAndPrivate" LocalPortMin="47800" LocalPortMax="47809" />
+        <desktop2:Rule Direction="in" IPProtocol="UDP" Profile="domainAndPrivate" LocalPortMin="47810" LocalPortMax="47810" />
+      </desktop2:FirewallRules>
+    </desktop2:Extension>
+  </Extensions>
+
+  <Capabilities>
+    <Capability Name="privateNetworkClientServer" />
+    <!-- Classic desktop (WPF) app: clipboard listener, DPAPI and sockets need full trust. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

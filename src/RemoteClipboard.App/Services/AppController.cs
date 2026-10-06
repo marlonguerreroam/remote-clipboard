@@ -71,7 +71,16 @@ internal sealed class AppController : IAsyncDisposable
         }
     }
 
-    public static bool IsAutoStartEnabled => AutoStart.IsEnabled;
+    /// <summary>
+    /// False in the Microsoft Store (MSIX) version: there, start-with-Windows is a manifest startup task
+    /// that the user manages in Windows Settings → Apps → Startup.
+    /// </summary>
+    public static bool CanManageAutoStart => !PackageInfo.IsPackaged;
+
+    public static bool IsAutoStartEnabled => CanManageAutoStart && AutoStart.IsEnabled;
+
+    /// <summary>App execution alias declared in the MSIX manifest (installer/msix/AppxManifest.xml).</summary>
+    private const string PackagedAlias = "RemoteClipboardApp.exe";
 
     public static AppController Create()
     {
@@ -171,7 +180,7 @@ internal sealed class AppController : IAsyncDisposable
 
         SaveSettings(updated);
         Theme.Apply(updated.Theme);
-        if (autoStart != IsAutoStartEnabled)
+        if (CanManageAutoStart && autoStart != IsAutoStartEnabled)
         {
             SetAutoStart(autoStart);
         }
@@ -184,13 +193,18 @@ internal sealed class AppController : IAsyncDisposable
     public static void OpenLogsFolder()
     {
         Directory.CreateDirectory(AppPaths.LogsDirectory);
-        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{AppPaths.LogsDirectory}\"") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{AppPaths.LogsDirectoryForShell}\"") { UseShellExecute = true });
     }
 
     /// <summary>Starts a new instance (which waits for this one to release the lock) and exits.</summary>
     public static void Restart()
     {
-        if (Environment.ProcessPath is { } path)
+        // A packaged app must be relaunched through its package (the alias), or it would run without its
+        // package identity and data.
+        var path = PackageInfo.IsPackaged
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "WindowsApps", PackagedAlias)
+            : Environment.ProcessPath;
+        if (path is not null && File.Exists(path))
         {
             Process.Start(new ProcessStartInfo(path, "--restart") { UseShellExecute = false });
         }
@@ -206,6 +220,11 @@ internal sealed class AppController : IAsyncDisposable
 
     public void SetAutoStart(bool enabled)
     {
+        if (!CanManageAutoStart)
+        {
+            return;
+        }
+
         if (enabled && Environment.ProcessPath is { } path)
         {
             AutoStart.Enable(path);
@@ -244,6 +263,11 @@ internal sealed class AppController : IAsyncDisposable
 
     private void ApplyFirstRunDefaults()
     {
+        if (!CanManageAutoStart)
+        {
+            return; // MSIX: the manifest startup task is enabled on first launch
+        }
+
         if (_settings.AutoStartConfigured)
         {
             // Moved from the portable build to the installed one (or reinstalled elsewhere): keep the

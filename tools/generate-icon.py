@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Marlon Andrés Guerrero Meriño
 # SPDX-License-Identifier: GPL-3.0-only
-"""Generates src/RemoteClipboard.App/Assets/app.ico (multi-resolution), Assets/icon.png (in-app logo)
-and docs/images/icon.png.
+"""Generates src/RemoteClipboard.App/Assets/app.ico (multi-resolution), Assets/icon.png (in-app logo),
+docs/images/icon.png and the MSIX (Microsoft Store) logos in installer/msix/Assets.
 
 Usage: python tools/generate-icon.py   (requires Pillow)
 Design: blue gradient tile, white clipboard, blue two-way arrow (synchronization).
@@ -11,6 +11,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / "src" / "RemoteClipboard.App" / "Assets"
+MSIX_DIR = ROOT / "installer" / "msix" / "Assets"
 SIZES = [16, 20, 24, 32, 40, 48, 64, 128, 256]
 S = 1024  # master canvas, downscaled for every size
 
@@ -49,6 +50,30 @@ def master() -> Image.Image:
     return tile
 
 
+def framed(image: Image.Image, width: int, height: int, logo: int) -> Image.Image:
+    """Logo of the given size centered on a transparent canvas (tiles get the system accent behind)."""
+    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    small = image.resize((logo, logo), Image.LANCZOS)
+    canvas.paste(small, ((width - logo) // 2, (height - logo) // 2), small)
+    return canvas
+
+
+def msix_assets(image: Image.Image) -> None:
+    MSIX_DIR.mkdir(parents=True, exist_ok=True)
+    for scale in (100, 200):
+        k = scale / 100
+        suffix = "" if scale == 100 else f".scale-{scale}"
+        image.resize((round(50 * k),) * 2, Image.LANCZOS).save(MSIX_DIR / f"StoreLogo{suffix}.png")
+        framed(image, round(150 * k), round(150 * k), round(100 * k)).save(MSIX_DIR / f"Square150x150Logo{suffix}.png")
+        framed(image, round(310 * k), round(150 * k), round(100 * k)).save(MSIX_DIR / f"Wide310x150Logo{suffix}.png")
+        image.resize((round(44 * k),) * 2, Image.LANCZOS).save(MSIX_DIR / f"Square44x44Logo{suffix}.png")
+    # Taskbar / Start list icons at exact pixel sizes, without the accent plate.
+    for size in (16, 24, 32, 48, 256):
+        icon = image.resize((size, size), Image.LANCZOS)
+        icon.save(MSIX_DIR / f"Square44x44Logo.targetsize-{size}.png")
+        icon.save(MSIX_DIR / f"Square44x44Logo.targetsize-{size}_altform-unplated.png")
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     image = master()
@@ -56,6 +81,7 @@ def main() -> None:
     image.resize((256, 256), Image.LANCZOS).save(ROOT / "docs" / "images" / "icon.png")
     image.resize((256, 256), Image.LANCZOS).save(OUT_DIR / "icon.png")
     image.save(OUT_DIR / "app.ico", sizes=[(s, s) for s in SIZES])
+    msix_assets(image)
     print(f"Wrote {OUT_DIR / 'app.ico'}")
 
 

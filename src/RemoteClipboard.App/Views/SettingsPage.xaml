@@ -45,6 +45,9 @@
             <CheckBox x:Name="AutoStartBox" Style="{StaticResource Switch}" Margin="0,18,0,0">
               <TextBlock Text="Iniciar con Windows" Foreground="{DynamicResource TextPrimary}" FontSize="14" />
             </CheckBox>
+            <TextBlock x:Name="AutoStartManagedText" Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,18,0,0"
+                       Visibility="Collapsed"
+                       Text="Inicio con Windows: se activa o desactiva en Configuración de Windows → Aplicaciones → Inicio." />
           </StackPanel>
         </Border>
       </StackPanel>
