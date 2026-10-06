@@ -43,6 +43,8 @@ jobs:
         run: dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -o publish/RemoteClipboard
       - name: Build installer
         run: .github/scripts/build-installer.ps1 -Version 0.0.0 -SourceDir publish/RemoteClipboard
+      - name: Build MSIX (test-signed; validates the manifest)
+        run: .github/scripts/build-msix.ps1 -Version "0.0.$env:GITHUB_RUN_NUMBER" -SourceDir publish/RemoteClipboard -OutputPath installer/Output/RemoteClipboard-test.msix -TestSign
       - name: Test build in a private draft release
         if: github.event_name == 'push' && github.ref_name != 'main'
         env:
@@ -52,5 +54,5 @@ jobs:
           gh release delete $tag --yes 2>$null # previous test build of this branch, if any
           $global:LASTEXITCODE = 0
           Compress-Archive -Path publish/RemoteClipboard/* -DestinationPath "RemoteClipboard-$tag-win-x64.zip"
-          $installer = (Get-ChildItem installer/Output/*.exe).FullName
-          gh release create $tag "RemoteClipboard-$tag-win-x64.zip" $installer --draft --target $env:GITHUB_SHA --title "Prueba $env:GITHUB_REF_NAME ($($env:GITHUB_SHA.Substring(0, 7)))" --notes 'Build de prueba privado (borrador). No publicar.'
+          $files = @("RemoteClipboard-$tag-win-x64.zip") + (Get-ChildItem installer/Output/*.exe, installer/Output/*.msix, installer/Output/*.cer).FullName
+          gh release create $tag @files --draft --target $env:GITHUB_SHA --title "Prueba $env:GITHUB_REF_NAME ($($env:GITHUB_SHA.Substring(0, 7)))" --notes 'Build de prueba privado (borrador). No publicar.'
