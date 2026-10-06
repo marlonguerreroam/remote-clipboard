@@ -50,3 +50,4 @@ netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir
 | 16 | Configuración → Tema Oscuro / Claro / Sistema | Cambia al instante, incluida la barra de título |
 | 17 | Opciones de un dispositivo → "Solo recibir" | Este equipo recibe pero no envía a ese dispositivo |
 | 18 | Configuración → cambiar el nombre → Guardar → Reiniciar | El otro equipo muestra el nombre nuevo |
+| 19 | Bandeja → Salir; volver a abrir la app. Repetir con Configuración → Guardar → "Reiniciar ahora" | La app se cierra del todo (no queda `RemoteClipboard.exe` en el Administrador de tareas) y vuelve a abrir |
