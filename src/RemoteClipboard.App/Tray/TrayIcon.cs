@@ -13,12 +13,13 @@ internal sealed class TrayIcon : IDisposable
     private readonly ToolStripMenuItem _syncItem;
     private readonly ToolStripMenuItem _autoStartItem;
     private readonly ToolStripMenuItem _statusItem;
-    private readonly Icon _activeIcon = TrayIconFactory.Create(Color.FromArgb(37, 99, 235));
-    private readonly Icon _idleIcon = TrayIconFactory.Create(Color.FromArgb(156, 163, 175));
+    private readonly Icon _activeIcon = TrayIconFactory.CreateActive();
+    private readonly Icon _idleIcon;
 
     public TrayIcon(AppController controller)
     {
         _controller = controller;
+        _idleIcon = TrayIconFactory.CreateIdle(_activeIcon);
         _statusItem = new ToolStripMenuItem { Enabled = false };
         var open = new ToolStripMenuItem("Abrir Remote Clipboard", null, (_, _) => controller.ShowMainWindow());
         open.Font = new Font(open.Font, System.Drawing.FontStyle.Bold);
@@ -32,6 +33,7 @@ internal sealed class TrayIcon : IDisposable
             new ToolStripSeparator(),
             open,
             new ToolStripMenuItem("Vincular dispositivo…", null, (_, _) => controller.ShowPairing()),
+            new ToolStripMenuItem("Configuración…", null, (_, _) => controller.ShowSettings()),
             new ToolStripSeparator(),
             _syncItem,
             _autoStartItem,
