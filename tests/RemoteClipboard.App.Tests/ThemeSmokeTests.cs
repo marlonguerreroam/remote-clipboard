@@ -67,6 +67,19 @@ public sealed class ThemeSmokeTests
         }
     });
 
+    [Fact]
+    public void Theme_and_style_keys_never_collide() => RunOnSta(() =>
+    {
+        _ = Application.Current ?? new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+        var styles = Load("Themes/Styles.xaml");
+        foreach (var theme in new[] { "Themes/Light.xaml", "Themes/Dark.xaml" })
+        {
+            // A shared key makes the later dictionary win: e.g. a brush lookup returning a Style.
+            var clashes = Load(theme).Keys.Cast<object>().Where(styles.Contains).ToList();
+            Assert.Empty(clashes);
+        }
+    });
+
     private static Window BuildWindow(Application app, out List<ToggleButton> toggles)
     {
         Style Style(string key) => (Style)app.Resources[key];

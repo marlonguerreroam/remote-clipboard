@@ -37,7 +37,7 @@
   <SolidColorBrush x:Key="GlassRaised" Color="#2EFFFFFF" />
   <SolidColorBrush x:Key="SubtleHover" Color="#1AFFFFFF" />
   <SolidColorBrush x:Key="NavSelected" Color="#403B82F6" />
-  <SolidColorBrush x:Key="Divider" Color="#1FFFFFFF" />
+  <SolidColorBrush x:Key="DividerBrush" Color="#1FFFFFFF" />
   <SolidColorBrush x:Key="MenuBackground" Color="#F51A2233" />
 
   <SolidColorBrush x:Key="TextPrimary" Color="#EEF3FB" />

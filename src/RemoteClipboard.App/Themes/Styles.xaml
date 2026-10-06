@@ -386,7 +386,7 @@
 
   <Style TargetType="Rectangle" x:Key="Divider">
     <Setter Property="Height" Value="1" />
-    <Setter Property="Fill" Value="{DynamicResource Divider}" />
+    <Setter Property="Fill" Value="{DynamicResource DividerBrush}" />
     <Setter Property="SnapsToDevicePixels" Value="True" />
   </Style>
 
