@@ -352,9 +352,46 @@ public sealed class ConnectionManager : IAsyncDisposable
         {
             if (!handedOver)
             {
+                if (ssl.IsAuthenticated)
+                {
+                    await CloseGracefullyAsync(ssl).ConfigureAwait(false);
+                }
+
                 await ssl.DisposeAsync().ConfigureAwait(false);
                 client.Dispose();
             }
+        }
+    }
+
+    /// <summary>
+    /// Ends a short-lived connection (pairing answer, rejection) without losing our last message.
+    /// Closing a socket that still has unread data makes Windows send RST instead of FIN, and the RST can
+    /// discard data already sent to the peer (seen as "Failed" instead of "LockedOut" in pairing).
+    /// So: send TLS close_notify, then drain until the peer closes, bounded in time and size.
+    /// </summary>
+    private static async Task CloseGracefullyAsync(SslStream ssl)
+    {
+        const int MaxDrainBytes = 64 * 1024;
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        var buffer = new byte[4096];
+        var drained = 0;
+        try
+        {
+            await ssl.ShutdownAsync().ConfigureAwait(false);
+            while (drained < MaxDrainBytes)
+            {
+                var read = await ssl.ReadAsync(buffer, timeout.Token).ConfigureAwait(false);
+                if (read == 0)
+                {
+                    return;
+                }
+
+                drained += read;
+            }
+        }
+        catch (Exception ex) when (PeerConnection.IsConnectionFailure(ex) || ex is InvalidOperationException)
+        {
+            // Peer already gone or timeout: nothing more to do.
         }
     }
 
