@@ -101,7 +101,7 @@
                 <TextBlock Text="{Binding StatusSubtitle}" Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,2,0,0" />
               </StackPanel>
               <CheckBox Grid.Column="2" Style="{StaticResource Switch}" VerticalAlignment="Center"
-                        IsChecked="{Binding SyncEnabled, Mode=TwoWay}" ToolTip="Sincronización ON/OFF"
+                        IsChecked="{Binding SyncEnabled, Mode=TwoWay}" IsEnabled="{Binding CanSync}" ToolTip="Sincronización ON/OFF"
                         AutomationProperties.Name="Sincronización" />
             </Grid>
           </Border>
@@ -222,6 +222,32 @@
                 </StackPanel>
               </Grid>
             </Border>
+
+            <StackPanel Visibility="{Binding ShowLicense, Converter={StaticResource BoolToVisibility}}">
+              <TextBlock Text="LICENCIA" Style="{StaticResource SectionTitle}" Margin="6,24,0,10" />
+              <Border Style="{StaticResource Card}" Padding="22">
+                <StackPanel>
+                  <TextBlock Text="{Binding LicenseTitle}" FontSize="16" FontWeight="SemiBold" FontFamily="{StaticResource DisplayFont}" />
+                  <TextBlock Text="{Binding LicenseDetail}" Style="{StaticResource Caption}" FontSize="13" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                  <StackPanel Visibility="{Binding ShowActivation, Converter={StaticResource BoolToVisibility}}" Margin="0,16,0,0">
+                    <TextBlock Text="Clave de licencia" Style="{StaticResource Caption}" FontSize="13" />
+                    <TextBox x:Name="LicenseKeyBox" Style="{StaticResource Input}" FontFamily="Cascadia Mono, Consolas" FontSize="12"
+                             TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="90" VerticalScrollBarVisibility="Auto" Margin="0,6,0,10"
+                             AutomationProperties.Name="Clave de licencia" />
+                    <StackPanel Orientation="Horizontal">
+                      <Button Content="Activar" Style="{StaticResource PrimaryButton}" Padding="22,9" Click="OnActivateLicense" />
+                      <Button Content="Comprar licencia" Style="{StaticResource GhostButton}" Margin="8,0,0,0" Click="OnBuyLicense"
+                              Visibility="{Binding CanBuy, Converter={StaticResource BoolToVisibility}}" />
+                    </StackPanel>
+                  </StackPanel>
+                  <TextBlock x:Name="LicenseMessage" TextWrapping="Wrap" Margin="0,10,0,0" Visibility="Collapsed" />
+                  <Button Content="Quitar la licencia de este equipo" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                          Margin="0,16,0,0" Click="OnRemoveLicense"
+                          Visibility="{Binding IsLicensed, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
 
             <TextBlock Text="ESTE EQUIPO" Style="{StaticResource SectionTitle}" Margin="6,24,0,10" />
             <Border Style="{StaticResource Card}" Padding="22">

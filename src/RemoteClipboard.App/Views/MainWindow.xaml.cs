@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using RemoteClipboard.App.Services;
 using RemoteClipboard.App.ViewModels;
+using RemoteClipboard.Core.Licensing;
 
 namespace RemoteClipboard.App.Views;
 
@@ -80,6 +81,41 @@ public sealed partial class MainWindow : Window
     // Opened only when the user clicks: the app itself never contacts the Internet.
     private void OnOpenSource(object sender, RoutedEventArgs e) =>
         Process.Start(new ProcessStartInfo(SourceUrl) { UseShellExecute = true })?.Dispose();
+
+    private void OnActivateLicense(object sender, RoutedEventArgs e)
+    {
+        var check = _controller.ActivateLicense(LicenseKeyBox.Text);
+        var (message, success) = check.Status switch
+        {
+            LicenseCheckStatus.Valid => ("Licencia activada. ¡Gracias por tu compra!", true),
+            LicenseCheckStatus.UnsupportedVersion => ("Esta clave es de una versión más nueva de Remote Clipboard: actualiza la aplicación.", false),
+            LicenseCheckStatus.BadSignature => ("La clave no es válida. Revisa que sea la que recibiste al comprar.", false),
+            _ => ("La clave no tiene el formato correcto. Cópiala completa, desde «RC1-» hasta el final.", false),
+        };
+        LicenseMessage.Text = message;
+        LicenseMessage.SetResourceReference(TextBlock.ForegroundProperty, success ? "Success" : "Danger");
+        LicenseMessage.Visibility = Visibility.Visible;
+        if (success)
+        {
+            LicenseKeyBox.Clear();
+        }
+    }
+
+    // Opened only when the user clicks: the app itself never contacts the Internet.
+    private void OnBuyLicense(object sender, RoutedEventArgs e) =>
+        Process.Start(new ProcessStartInfo(LicensingConfig.PurchaseUrl) { UseShellExecute = true })?.Dispose();
+
+    private void OnRemoveLicense(object sender, RoutedEventArgs e)
+    {
+        var answer = MessageBox.Show(this,
+            "¿Quitar la licencia de este equipo?\n\nPodrás activarla de nuevo con la misma clave, aquí o en otro equipo.",
+            "Quitar licencia", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+        if (answer == MessageBoxResult.Yes)
+        {
+            _controller.DeactivateLicense();
+            LicenseMessage.Visibility = Visibility.Collapsed;
+        }
+    }
 
     private void OnMoreClick(object sender, RoutedEventArgs e)
     {
