@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+# SPDX-License-Identifier: GPL-3.0-only
+
 # Authenticode-signs files when a code signing certificate is configured as repository secrets:
 #   CODESIGN_PFX_BASE64 (the .pfx, base64) and CODESIGN_PFX_PASSWORD.
 # Without them this script is never called. The certificate never touches the repository.

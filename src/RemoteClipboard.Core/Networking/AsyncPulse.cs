@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+// SPDX-License-Identifier: GPL-3.0-only
+
 namespace RemoteClipboard.Core.Networking;
 
 /// <summary>Wakes every waiter at once (network changed, peer disconnected, peer list changed).</summary>

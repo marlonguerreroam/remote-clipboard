@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;

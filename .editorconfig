@@ -22,3 +22,6 @@ dotnet_diagnostic.CA2007.severity = none
 dotnet_diagnostic.CA1848.severity = warning
 # Log arguments here are cheap property reads; not worth IsEnabled guards.
 dotnet_diagnostic.CA1873.severity = suggestion
+# Every source file carries the copyright and license header (enforced at build time).
+file_header_template = Copyright (c) 2026 Marlon Andrés Guerrero Meriño\nSPDX-License-Identifier: GPL-3.0-only
+dotnet_diagnostic.IDE0073.severity = warning

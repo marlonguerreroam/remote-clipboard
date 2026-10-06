@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+// SPDX-License-Identifier: GPL-3.0-only
+
 using System.Windows;
 using RemoteClipboard.App.Services;
 using RemoteClipboard.Windows.Storage;
