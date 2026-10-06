@@ -226,11 +226,21 @@ internal sealed class AppController : IAsyncDisposable
 
     public static void Exit() => Application.Current.Shutdown();
 
-    public async ValueTask DisposeAsync()
+    /// <summary>Releases UI-thread resources (tray icon, theme hooks). Call on the UI thread, before <see cref="DisposeAsync"/>.</summary>
+    public void DisposeUi()
     {
         _tray?.Dispose();
+        _tray = null;
         Theme.Dispose();
-        await Agent.DisposeAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Stops networking, clipboard and logging. Never resumes on the UI thread, so it can be waited on
+    /// from a thread pool thread while the UI thread is shutting down.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        await Agent.DisposeAsync().ConfigureAwait(false);
         _clipboard.Dispose();
         _identity.Dispose();
         _loggerFactory.Dispose();

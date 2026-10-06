@@ -22,7 +22,13 @@ public partial class App : Application
         if (!AcquireInstanceLock(restarting: e.Args.Contains("--restart", StringComparer.OrdinalIgnoreCase)))
         {
             // Already running for this user: bring its window to front (when it runs in this session).
-            ActivationSignal.TrySignalRunningInstance();
+            if (!ActivationSignal.TrySignalRunningInstance())
+            {
+                MessageBox.Show(
+                    "Remote Clipboard ya se está ejecutando para tu usuario en otra sesión de Windows.",
+                    "Remote Clipboard", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
             Shutdown();
             return;
         }
@@ -67,7 +73,18 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _activation?.Dispose();
-        _controller?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        if (_controller is { } controller)
+        {
+            controller.DisposeUi();
+
+            // OnExit runs on (and blocks) the UI thread. Waiting here for an async shutdown whose
+            // continuation needs the UI thread deadlocks: the process then stays alive invisibly, holding
+            // the single-instance lock, and the app can no longer be started. So the shutdown runs on the
+            // thread pool, bounded in time; whatever is left is ended with the process.
+            var shutdown = Task.Run(async () => await controller.DisposeAsync().ConfigureAwait(false));
+            shutdown.Wait(TimeSpan.FromSeconds(5));
+        }
+
         _instanceLock?.Dispose();
         base.OnExit(e);
     }
