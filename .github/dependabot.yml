@@ -1,0 +1,22 @@
+# Weekly update PRs for NuGet packages (Directory.Packages.props) and GitHub Actions. Security updates for
+# known vulnerabilities are opened as soon as an advisory is published (enable them in Settings).
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      nuget:
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      actions:
+        patterns: ['*']

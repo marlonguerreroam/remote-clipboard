@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+# SPDX-License-Identifier: GPL-3.0-only
+
 # Builds installer\Output\RemoteClipboardSetup-v<Version>.exe from an already published app folder.
 param(
     [Parameter(Mandatory = $true)][string] $Version,

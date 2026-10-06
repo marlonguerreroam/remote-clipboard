@@ -1,3 +1,6 @@
+// Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+// SPDX-License-Identifier: GPL-3.0-only
+
 using RemoteClipboard.App.Services;
 using RemoteClipboard.Core.Agent;
 using RemoteClipboard.Core.Devices;

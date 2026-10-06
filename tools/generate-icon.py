@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Marlon Andrés Guerrero Meriño
+# SPDX-License-Identifier: GPL-3.0-only
 """Generates src/RemoteClipboard.App/Assets/app.ico (multi-resolution) and docs/images/icon.png.
 
 Usage: python tools/generate-icon.py   (requires Pillow)
