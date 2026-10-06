@@ -1,7 +1,9 @@
 # Instalador (Inno Setup)
 
-`RemoteClipboard.iss` genera `RemoteClipboardSetup-vX.Y.Z.exe`. Lo construye el workflow *Release*
-(y el CI en cada PR, para validar el script). Construcción local en Windows:
+`RemoteClipboard.iss` genera `RemoteClipboardSetup-vX.Y.Z.exe`. Lo construye el workflow *Release*, que
+lo deja en el borrador privado `vX.Y.Z-binarios` (el instalador listo se vende; no se publica gratis).
+El CI también lo construye en cada PR para validar el script, sin publicarlo. Construcción local en Windows
+(requiere [Inno Setup 6](https://jrsoftware.org/isinfo.php)):
 
 ```powershell
 dotnet publish src\RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -o publish\RemoteClipboard

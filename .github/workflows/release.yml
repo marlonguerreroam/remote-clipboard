@@ -1,8 +1,12 @@
 name: Release
 
-# Builds, tests and attaches the portable build to a GitHub Release. Triggered by pushing a tag such as
-# v0.1.0, or manually (Actions → Release → Run workflow) with a version: the release then creates the tag
-# on the commit being built.
+# Builds and tests a version, then:
+#   - publishes the public release vX.Y.Z (tag + notes + source code, NO binaries: the ready-made
+#     installer is sold separately; anyone may still build it from source, as the GPL-3.0 allows);
+#   - attaches the installer and the portable ZIP to a DRAFT release "vX.Y.Z-binarios", visible only to
+#     people with write access. Download them from there for the sales channel; never publish that draft.
+# Triggered by pushing a tag such as v0.1.0, or manually (Actions → Release → Run workflow) with a
+# version: the release then creates the tag on the commit being built.
 on:
   push:
     tags: ['v*']
@@ -50,7 +54,13 @@ jobs:
         env:
           CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
           CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
-      - name: Create release
+      - name: Upload binaries to a private draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$env:TAG" "installer/Output/RemoteClipboardSetup-$env:TAG.exe" "RemoteClipboard-$env:TAG-win-x64.zip" --target "${{ github.sha }}" --title "Remote Clipboard $env:TAG" --generate-notes
+        run: |
+          gh release create "$env:TAG-binarios" "installer/Output/RemoteClipboardSetup-$env:TAG.exe" "RemoteClipboard-$env:TAG-win-x64.zip" --draft --target "${{ github.sha }}" --title "Binarios $env:TAG (privado: no publicar)" --notes "Instalador y ZIP portable para el canal de venta. Borrador privado: no lo publiques."
+      - name: Create public release (source only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$env:TAG" --target "${{ github.sha }}" --title "Remote Clipboard $env:TAG" --generate-notes

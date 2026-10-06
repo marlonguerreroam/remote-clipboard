@@ -30,6 +30,8 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=Marlon Andrés Guerrero Meriño
+; Where the GPL-3.0 corresponding source code is available (shown in Apps & features).
+AppPublisherURL=https://github.com/marlonguerreroam/remote-clipboard
 AppCopyright=Copyright © 2026 Marlon Andrés Guerrero Meriño
 ; Shown before installing: the GPL-3.0 license (English is the only official text).
 LicenseFile=..\LICENSE

@@ -47,13 +47,16 @@ El usuario final **no necesita instalar .NET** ni otras dependencias (publicaci�
 
 ## Instalación y uso
 
-**Instalador (recomendado):** en GitHub → *Releases* → última versión → `RemoteClipboardSetup-vX.Y.Z.exe`.
-Instala en *Archivos de programa*, crea los accesos directos y **configura el firewall automáticamente**
-(solo redes privadas/dominio y subred local). Para actualizar, ejecuta el instalador nuevo encima: se
-conservan la configuración y los dispositivos vinculados. Detalles en [installer/README.md](installer/README.md).
+**Instalador listo para usar (de pago):** `RemoteClipboardSetup-vX.Y.Z.exe` se distribuye por el canal
+de venta oficial (próximamente). Instala en *Archivos de programa*, crea los accesos directos y **configura
+el firewall automáticamente** (solo redes privadas/dominio y subred local). Para actualizar, ejecuta el
+instalador nuevo encima: se conservan la configuración y los dispositivos vinculados. Detalles en
+[installer/README.md](installer/README.md). Comprarlo apoya el desarrollo.
 
-**Portable:** el mismo release incluye `RemoteClipboard-vX.Y.Z-win-x64.zip` (descomprimir y ejecutar; el
-firewall se configura a mano, ver [docs/TESTING.md](docs/TESTING.md)). No requiere instalar .NET.
+**Compilarlo tú mismo (gratis):** el código fuente completo de cada versión está en *Releases* (y en esta
+rama). Con el .NET SDK 10 puedes compilar la app y el instalador como se explica en
+[Desarrollo y compilación](#desarrollo-y-compilación) e [installer/README.md](installer/README.md).
+La versión compilada por terceros no está firmada ni tiene soporte.
 
 Configuración (icono ⚙ de la ventana o menú de la bandeja): nombre visible, visibilidad en la red,
 puerto, tema e inicio con Windows.
@@ -106,8 +109,11 @@ dotnet test               # ejecuta las pruebas
 dotnet run --project src/RemoteClipboard.App   # sólo en Windows
 ```
 
-Publicar una versión: *Actions → Release → Run workflow* con la versión (p. ej. `v0.2.0`), o subir un tag `vX.Y.Z`. El workflow *Release* compila, prueba, crea el tag y adjunta el
-ZIP portable a una GitHub Release.
+Publicar una versión: *Actions → Release → Run workflow* con la versión (p. ej. `v0.4.0`), o subir un tag
+`vX.Y.Z`. El workflow *Release* compila, prueba, publica la release `vX.Y.Z` **solo con el código fuente** y
+deja el instalador y el ZIP en un **borrador privado** `vX.Y.Z-binarios` (visible solo para el dueño del
+repositorio; **nunca publicarlo**), de donde se descargan para el canal de venta. El CI tampoco publica
+binarios como artefactos.
 
 Publicación manual:
 

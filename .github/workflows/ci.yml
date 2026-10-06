@@ -25,6 +25,8 @@ jobs:
       - name: Test
         run: dotnet test -c Release --no-build
 
+  # Validates that the app publishes and the installer builds. The binaries are NOT uploaded as
+  # artifacts: in a public repository anyone could download them, and the installer is sold separately.
   publish:
     name: Portable build (win-x64)
     needs: build-test
@@ -36,15 +38,5 @@ jobs:
           global-json-file: global.json
       - name: Publish self-contained
         run: dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -o publish/RemoteClipboard
-      - uses: actions/upload-artifact@v7
-        with:
-          name: RemoteClipboard-win-x64
-          path: publish/RemoteClipboard
-          retention-days: 14
       - name: Build installer
         run: .github/scripts/build-installer.ps1 -Version 0.0.0 -SourceDir publish/RemoteClipboard
-      - uses: actions/upload-artifact@v7
-        with:
-          name: RemoteClipboardSetup
-          path: installer/Output/*.exe
-          retention-days: 14
