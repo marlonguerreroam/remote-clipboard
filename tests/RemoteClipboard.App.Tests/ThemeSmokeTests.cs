@@ -22,6 +22,8 @@ namespace RemoteClipboard.App.Tests;
 [SupportedOSPlatform("windows")]
 public sealed class ThemeSmokeTests
 {
+    private static readonly string[] ThemeFiles = ["Themes/Light.xaml", "Themes/Dark.xaml"];
+
     [Fact]
     public void Every_style_renders_in_both_themes() => RunOnSta(() =>
     {
@@ -72,7 +74,7 @@ public sealed class ThemeSmokeTests
     {
         _ = Application.Current ?? new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         var styles = Load("Themes/Styles.xaml");
-        foreach (var theme in new[] { "Themes/Light.xaml", "Themes/Dark.xaml" })
+        foreach (var theme in ThemeFiles)
         {
             // A shared key makes the later dictionary win: e.g. a brush lookup returning a Style.
             var clashes = Load(theme).Keys.Cast<object>().Where(styles.Contains).ToList();
