@@ -6,6 +6,7 @@ using RemoteClipboard.Core.Devices;
 using RemoteClipboard.Core.Pairing;
 using RemoteClipboard.Core.Protocol;
 using RemoteClipboard.Core.Security;
+using RemoteClipboard.Core.Sync;
 using RemoteClipboard.Core.Tests.TestSupport;
 
 namespace RemoteClipboard.Core.Tests.EndToEnd;
@@ -202,6 +203,39 @@ public class EndToEndTests
 
         Assert.Equal("no debe llegar", a.Clipboard.Text);
         Assert.Equal("tampoco debe salir", b.Clipboard.Text);
+    }
+
+    [Fact]
+    public async Task Receive_only_device_applies_but_never_sends()
+    {
+        await using var server = TestAgent.Start("SERVIDOR");
+        await using var pc = TestAgent.Start("PC");
+        await PairAsync(server, pc);
+
+        // Changed while connected: must apply immediately.
+        server.Agent.SetSyncDirection(pc.Agent.DeviceId, SyncDirection.ReceiveOnly);
+
+        pc.Clipboard.UserCopies("hacia el servidor");
+        await Eventually.TrueAsync(() => server.Clipboard.Text == "hacia el servidor", "server receives");
+        server.Clipboard.UserCopies("no debe salir del servidor");
+        await Task.Delay(800, Ct);
+        Assert.Equal("hacia el servidor", pc.Clipboard.Text);
+        Assert.Equal(SyncDirection.ReceiveOnly, server.Peers.Find(pc.Agent.DeviceId)!.Direction);
+    }
+
+    [Fact]
+    public async Task Send_only_device_sends_but_ignores_incoming()
+    {
+        await using var a = TestAgent.Start("PC-A");
+        await using var b = TestAgent.Start("PC-B");
+        await PairAsync(a, b);
+        a.Agent.SetSyncDirection(b.Agent.DeviceId, SyncDirection.SendOnly);
+
+        a.Clipboard.UserCopies("sale de A");
+        await Eventually.TrueAsync(() => b.Clipboard.Text == "sale de A", "A sends");
+        b.Clipboard.UserCopies("A no debe aplicarlo");
+        await Task.Delay(800, Ct);
+        Assert.Equal("sale de A", a.Clipboard.Text);
     }
 
     [Fact]

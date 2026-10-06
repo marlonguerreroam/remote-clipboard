@@ -45,7 +45,9 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         _logger = loggerFactory.CreateLogger<RemoteClipboardAgent>();
 
         _connections = new ConnectionManager(identity, info, peers, options, loggerFactory.CreateLogger<ConnectionManager>(), time);
-        _sync = new SyncEngine(identity.Id, writer, () => _connections.Connections, loggerFactory.CreateLogger<SyncEngine>(), time);
+        _sync = new SyncEngine(
+            identity.Id, writer, () => _connections.Connections, loggerFactory.CreateLogger<SyncEngine>(), time,
+            id => _peers.Find(id)?.Direction ?? SyncDirection.Bidirectional);
         _connections.MessageHandler = _sync.OnMessageAsync;
         _connections.Connected += (_, _) => RaiseStateChanged();
         _connections.Disconnected += (_, _) => RaiseStateChanged();
@@ -147,6 +149,15 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         {
             _connections.Disconnect(id);
             Log.DeviceUnpaired(_logger, id);
+        }
+    }
+
+    /// <summary>What this device does with <paramref name="id"/>: send and receive, only send, or only receive.</summary>
+    public void SetSyncDirection(DeviceId id, SyncDirection direction)
+    {
+        if (_peers.Find(id) is { } peer && peer.Direction != direction)
+        {
+            _peers.AddOrUpdate(peer with { Direction = direction });
         }
     }
 
