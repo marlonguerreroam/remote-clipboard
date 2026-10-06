@@ -26,6 +26,16 @@ public static partial class Log
     [LoggerMessage(EventId = 4000, Level = LogLevel.Information, Message = "Device identity {DeviceId} ({Result})")]
     public static partial void IdentityLoaded(ILogger logger, DeviceId deviceId, string result);
 
+    // Licensing: never log the key itself.
+    [LoggerMessage(EventId = 5000, Level = LogLevel.Information, Message = "License activated ({Edition})")]
+    public static partial void LicenseActivated(ILogger logger, string edition);
+
+    [LoggerMessage(EventId = 5001, Level = LogLevel.Information, Message = "License key rejected: {Reason}")]
+    public static partial void LicenseRejected(ILogger logger, string reason);
+
+    [LoggerMessage(EventId = 5002, Level = LogLevel.Information, Message = "License state: {State}")]
+    public static partial void LicenseState(ILogger logger, string state);
+
     [LoggerMessage(EventId = 9000, Level = LogLevel.Error, Message = "Unexpected error in {Component}")]
     public static partial void UnexpectedError(ILogger logger, string component, Exception exception);
 
