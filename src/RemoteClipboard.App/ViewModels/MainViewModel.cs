@@ -48,6 +48,10 @@ internal sealed class MainViewModel : ObservableObject
 
     public bool IsHealthy => SyncEnabled && ConnectedCount > 0;
 
+    public string AgentStatusTitle => SyncEnabled ? "Activo" : "En pausa";
+
+    public string AgentStatusSubtitle => SyncEnabled ? "Listo para sincronizar" : "Sincronización desactivada";
+
     public string ThisDeviceName => _controller.DisplayName;
 
     public string ThisDeviceDetail => $"{_controller.OsDescription} · {_controller.LocalAddressesText}";
@@ -79,5 +83,7 @@ internal sealed class MainViewModel : ObservableObject
         Raise(nameof(StatusTitle));
         Raise(nameof(StatusSubtitle));
         Raise(nameof(IsHealthy));
+        Raise(nameof(AgentStatusTitle));
+        Raise(nameof(AgentStatusSubtitle));
     }
 }

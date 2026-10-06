@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteClipboard.Core.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteClipboard.Windows.Tests", "tests\RemoteClipboard.Windows.Tests\RemoteClipboard.Windows.Tests.csproj", "{AAE4499C-20EA-4C18-B5A2-32188A9D9273}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteClipboard.App.Tests", "tests\RemoteClipboard.App.Tests\RemoteClipboard.App.Tests.csproj", "{097B7319-FAAB-46BF-A159-82EDDD7850D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -87,6 +89,18 @@ Global
 		{AAE4499C-20EA-4C18-B5A2-32188A9D9273}.Release|x64.Build.0 = Release|Any CPU
 		{AAE4499C-20EA-4C18-B5A2-32188A9D9273}.Release|x86.ActiveCfg = Release|Any CPU
 		{AAE4499C-20EA-4C18-B5A2-32188A9D9273}.Release|x86.Build.0 = Release|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Debug|x64.Build.0 = Debug|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Debug|x86.Build.0 = Debug|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Release|x64.ActiveCfg = Release|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Release|x64.Build.0 = Release|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Release|x86.ActiveCfg = Release|Any CPU
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,5 +111,6 @@ Global
 		{0FF12A6D-2155-4210-AECA-77AA00675049} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{FFA93D1A-9CA9-458B-A636-1546FBBF97AC} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{AAE4499C-20EA-4C18-B5A2-32188A9D9273} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{097B7319-FAAB-46BF-A159-82EDDD7850D0} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

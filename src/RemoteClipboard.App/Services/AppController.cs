@@ -31,7 +31,6 @@ internal sealed class AppController : IAsyncDisposable
     private TrayIcon? _tray;
     private MainWindow? _mainWindow;
     private PairingWindow? _pairingWindow;
-    private SettingsWindow? _settingsWindow;
 
     private AppController(ILoggerFactory loggerFactory, DeviceIdentity identity, WindowsClipboard clipboard, RemoteClipboardAgent agent, AppSettings settings, string settingsPath)
     {
@@ -154,14 +153,8 @@ internal sealed class AppController : IAsyncDisposable
 
     public void ShowSettings()
     {
-        if (_settingsWindow is null)
-        {
-            _settingsWindow = new SettingsWindow(this) { Owner = _mainWindow?.IsVisible == true ? _mainWindow : null };
-            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
-        }
-
-        _settingsWindow.Show();
-        _settingsWindow.Activate();
+        ShowMainWindow();
+        _mainWindow?.ShowPage(MainPage.Settings);
     }
 
     /// <summary>

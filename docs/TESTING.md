@@ -20,9 +20,9 @@ tres dispositivos, y ausencia de contenido y códigos en los logs.
 
 ## Manual (dos equipos reales)
 
-Build portable: *Releases* → borrador privado `vX.Y.Z-binarios` (generado por el workflow *Release*) →
-`RemoteClipboard-vX.Y.Z-win-x64.zip`, o compilación local con `dotnet publish` (ver README) →
-descomprimir y ejecutar `RemoteClipboard.exe` en cada equipo.
+Build portable: *Releases* → borrador privado `prueba-<rama>` (lo genera el CI en cada push a una rama de
+trabajo, con el ZIP y el instalador) o `vX.Y.Z-binarios` (workflow *Release*), o compilación local con
+`dotnet publish` (ver README) → descomprimir y ejecutar `RemoteClipboard.exe` en cada equipo.
 
 Firewall (hasta que exista el instalador), en una consola de administrador de cada equipo:
 
@@ -49,6 +49,7 @@ netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir
 | 14 | B: Vincular → Introducir código | A aparece en "Equipos en la red"; con A mostrando código, aparece "Mostrando código" |
 | 15 | Cambiar la IP de **ambos** equipos y reiniciar la app | Se reconectan solos (descubrimiento) |
 | 16 | Configuración → Tema Oscuro / Claro / Sistema | Cambia al instante, incluida la barra de título |
+| 16b | Windows 11: mover la ventana sobre un fondo de colores; desactivar *Configuración de Windows → Personalización → Colores → Efectos de transparencia* | Con transparencia: el fondo se ve desenfocado a través de la ventana. Sin ella (o en RDP / Windows 10): degradado opaco, todo legible |
 | 17 | Opciones de un dispositivo → "Solo recibir" | Este equipo recibe pero no envía a ese dispositivo |
 | 18 | Configuración → cambiar el nombre → Guardar → Reiniciar | El otro equipo muestra el nombre nuevo |
 | 20 | Ejecutar `RemoteClipboardSetup` (sin portable previo) | Pide permisos de administrador, instala, abre la app; existen las reglas "Remote Clipboard (TCP)" y "(descubrimiento)" en el Firewall de Windows |
