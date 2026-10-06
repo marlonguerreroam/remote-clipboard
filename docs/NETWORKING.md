@@ -5,13 +5,19 @@
 | Puerto | Protocolo | Dirección | Fase | Motivo |
 |---|---|---|---|---|
 | **47800** (47801–47809 si está ocupado) | TCP | Entrada + salida | 1 | Canal TLS de sincronización y vinculación. El rango sólo se usa en Windows Server con varios usuarios (un agente por usuario). |
-| **47810** | UDP | Entrada + salida | 2 | Descubrimiento en la LAN (anuncios multicast/broadcast). Opcional: se puede desactivar y usar IP manual. |
+| **47810** | UDP | Entrada + salida | 2 | Descubrimiento en la LAN (anuncios broadcast). Opcional: se puede desactivar y usar IP manual. |
 
 Regla de firewall creada por el instalador (una por puerto/protocolo):
 
 ```
 netsh advfirewall firewall add rule name="Remote Clipboard (TCP)" dir=in action=allow ^
   program="%ProgramFiles%\Remote Clipboard\RemoteClipboard.exe" protocol=TCP localport=47800-47809 ^
+  profile=private,domain remoteip=localsubnet
+```
+
+```
+netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir=in action=allow ^
+  program="%ProgramFiles%\Remote Clipboard\RemoteClipboard.exe" protocol=UDP localport=47810 ^
   profile=private,domain remoteip=localsubnet
 ```
 
@@ -51,16 +57,25 @@ que ningún mensaje en vuelo se pierde.
 | Wi-Fi/cable desconectado, equipo apagado o reiniciado | Heartbeat `ping` cada 15 s; sin respuesta en 45 s ⇒ desconectado. |
 | Reintento | Backoff exponencial 1 s → 30 s con *jitter*. |
 | Red recupera conectividad | `NetworkChange.NetworkAddressChanged` dispara un reintento inmediato. |
-| Cambio de IP del peer | Se actualiza con: conexiones entrantes del peer (+ su puerto en `Hello`) y anuncios de descubrimiento (Fase 2). Basta con que uno de los dos conserve su dirección; si ambos cambian a la vez, en el MVP hay que volver a vincular (el descubrimiento de la Fase 2 lo resuelve). |
+| Cambio de IP del peer | Se actualiza con las conexiones entrantes del peer (+ su puerto en `Hello`) y con los anuncios de descubrimiento (verificados por TLS antes de guardarse). Funciona aunque ambos equipos cambien de dirección a la vez. |
 | Aplicación reiniciada | La identidad y los pins persisten; se reconecta sola. |
 | Firewall bloqueando temporalmente | Se trata como desconexión; se reintenta con backoff. |
 
-## Descubrimiento (Fase 2)
+## Descubrimiento en la LAN
 
-UDP multicast (grupo de ámbito local) + broadcast de subred como respaldo, puerto 47810. El anuncio
-contiene `DeviceId`, nombre, SO y puerto TCP. **No es fuente de confianza**: sólo una pista de dirección;
-la autenticación la da siempre el pin TLS. mDNS descartado: la API nativa no existe en Windows Server
-2016 y una implementación completa no aporta nada en este caso.
+- **UDP 47810**, broadcast de cada subred IPv4 + `255.255.255.255`. Puerto compartido (`SO_REUSEADDR`),
+  así cada agente de usuario de un Windows Server multiusuario recibe los anuncios.
+- Mensajes JSON (≤ 1 KB): `announce` {id, nombre, SO, puerto TCP, "mostrando código"} cada ~15 s, al
+  arrancar, al abrir/cerrar la vinculación y al cambiar la red; `query` pide a todos anunciarse ya
+  (respuesta limitada a 1/s para no amplificar tormentas de broadcast).
+- Los equipos que dejan de anunciarse desaparecen de la lista a los ~50 s.
+- **No es fuente de confianza.** Para un dispositivo ya vinculado, la dirección anunciada es sólo un
+  *candidato extra* de conexión; se guarda únicamente después de que el handshake TLS demuestre su
+  identidad (pin). Un anuncio falso puede, como mucho, provocar un intento de conexión fallido.
+- Se puede desactivar ("Visible en la red local" en Configuración); entonces se usa la IP manual.
+- mDNS descartado: la API nativa no existe en Windows Server 2016 y no aporta nada aquí.
+
+Gracias al descubrimiento, dos equipos vinculados se reencuentran aunque **ambos** cambien de IP/puerto.
 
 ## Futuro: relay (Fase 6, no implementado)
 

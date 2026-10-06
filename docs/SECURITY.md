@@ -17,6 +17,7 @@ SHA-256, HMAC, HKDF, DPAPI y J-PAKE (RFC 8236, implementación de BouncyCastle).
 | Otro usuario del mismo Windows Server | Leer el portapapeles o robar la identidad | Agente por usuario en su sesión, identidad cifrada con DPAPI CurrentUser, lista de peers por usuario. |
 | Lectura de logs/archivos | Recuperar contenido | Nunca se registra ni se guarda contenido; huellas HMAC sólo en memoria con clave aleatoria. |
 | Peer malicioso vinculado | DoS por mensajes enormes | Límite de trama (1 MiB) y de contenido (32 MiB) verificado **antes** de reservar memoria. |
+| Anuncios de descubrimiento falsificados | Redirigir o "envenenar" la dirección de un equipo vinculado | El anuncio es sólo un candidato de conexión; la dirección se guarda únicamente tras verificar el pin en TLS. Datagramas ≤ 1 KB, validados y saneados. |
 | Peer vinculado que reenvía contenido ajeno | Inyectar contenido "de otro" | `OriginDeviceId` debe ser el del peer autenticado; nada se retransmite. |
 
 Fuera de alcance del MVP: malware ejecutándose como el mismo usuario (puede leer el portapapeles
