@@ -27,7 +27,10 @@ internal sealed class TrayIcon : IDisposable
         var open = new ToolStripMenuItem("Abrir Remote Clipboard", null, (_, _) => controller.ShowMainWindow());
         open.Font = new Font(open.Font, System.Drawing.FontStyle.Bold);
         _syncItem = new ToolStripMenuItem("Sincronización activa", null, (_, _) => controller.SetSyncEnabled(!controller.Agent.SyncEnabled));
-        _autoStartItem = new ToolStripMenuItem("Iniciar con Windows", null, (_, _) => controller.SetAutoStart(!AppController.IsAutoStartEnabled));
+        _autoStartItem = new ToolStripMenuItem("Iniciar con Windows", null, (_, _) => controller.SetAutoStart(!AppController.IsAutoStartEnabled))
+        {
+            Visible = AppController.CanManageAutoStart, // Store version: Windows Settings → Apps → Startup
+        };
 
         _menu = new ContextMenuStrip();
         _menu.Items.AddRange(

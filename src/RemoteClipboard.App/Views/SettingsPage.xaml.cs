@@ -35,6 +35,8 @@ public sealed partial class SettingsPage : UserControl
         DiscoveryBox.IsChecked = settings.DiscoveryEnabled;
         PortBox.Text = settings.PreferredPort.ToString(CultureInfo.InvariantCulture);
         AutoStartBox.IsChecked = AppController.IsAutoStartEnabled;
+        AutoStartBox.Visibility = AppController.CanManageAutoStart ? Visibility.Visible : Visibility.Collapsed;
+        AutoStartManagedText.Visibility = AppController.CanManageAutoStart ? Visibility.Collapsed : Visibility.Visible;
         (settings.Theme switch
         {
             AppTheme.Light => ThemeLight,
