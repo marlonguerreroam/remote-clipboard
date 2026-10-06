@@ -26,8 +26,9 @@ internal sealed partial class ThemeManager : IDisposable
     private const int BackdropAcrylic = 3; // DWMSBT_TRANSIENTWINDOW
     private const int FirstBackdropBuild = 22621; // Windows 11 22H2
 
-    private static readonly Uri LightUri = new("Themes/Light.xaml", UriKind.Relative);
-    private static readonly Uri DarkUri = new("Themes/Dark.xaml", UriKind.Relative);
+    // Component URIs: valid regardless of which assembly started the process (the app or the UI tests).
+    private static readonly Uri LightUri = new("pack://application:,,,/RemoteClipboard;component/Themes/Light.xaml");
+    private static readonly Uri DarkUri = new("pack://application:,,,/RemoteClipboard;component/Themes/Dark.xaml");
 
     private AppTheme _preference = AppTheme.System;
     private bool _applied;
