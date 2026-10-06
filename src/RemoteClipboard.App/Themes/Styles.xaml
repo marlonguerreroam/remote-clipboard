@@ -19,7 +19,7 @@
   </LinearGradientBrush>
 
   <Style TargetType="Window" x:Key="AppWindow">
-    <Setter Property="Icon" Value="pack://application:,,,/Assets/app.ico" />
+    <Setter Property="Icon" Value="pack://application:,,,/RemoteClipboard;component/Assets/app.ico" />
     <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
     <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
     <Setter Property="FontSize" Value="13" />

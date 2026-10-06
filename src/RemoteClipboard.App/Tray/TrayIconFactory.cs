@@ -12,7 +12,7 @@ namespace RemoteClipboard.App.Tray;
 /// <summary>Tray icons from the application icon: full color when syncing, grayscale when idle or paused.</summary>
 internal static partial class TrayIconFactory
 {
-    private static readonly Uri IconUri = new("pack://application:,,,/Assets/app.ico");
+    private static readonly Uri IconUri = new("pack://application:,,,/RemoteClipboard;component/Assets/app.ico");
 
     public static Icon CreateActive()
     {
