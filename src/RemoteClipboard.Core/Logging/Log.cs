@@ -74,6 +74,12 @@ public static partial class Log
     [LoggerMessage(EventId = 3003, Level = LogLevel.Information, Message = "Device unpaired: {DeviceId}")]
     public static partial void DeviceUnpaired(ILogger logger, DeviceId deviceId);
 
+    [LoggerMessage(EventId = 2010, Level = LogLevel.Warning, Message = "LAN discovery unavailable on UDP port {Port}: {Reason}")]
+    public static partial void DiscoveryUnavailable(ILogger logger, int port, string reason);
+
+    [LoggerMessage(EventId = 2011, Level = LogLevel.Debug, Message = "Discovered address hint for {DeviceId}: {Endpoint}")]
+    public static partial void AddressHint(ILogger logger, DeviceId deviceId, string endpoint);
+
     [LoggerMessage(EventId = 3000, Level = LogLevel.Information, Message = "Pairing successful with {DeviceId} ({DisplayName})")]
     public static partial void PairingSucceeded(ILogger logger, DeviceId deviceId, string displayName);
 

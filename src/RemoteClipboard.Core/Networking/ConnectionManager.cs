@@ -26,6 +26,7 @@ public sealed class ConnectionManager : IAsyncDisposable
     private readonly ILogger _logger;
     private readonly ConcurrentDictionary<DeviceId, PeerConnection> _connections = new();
     private readonly ConcurrentDictionary<DeviceId, CancellationTokenSource> _dialers = new();
+    private readonly ConcurrentDictionary<DeviceId, (string Host, int Port)> _addressHints = new();
     private readonly Lock _registrationGate = new();
     private readonly AsyncPulse _pulse = new();
     private readonly CancellationTokenSource _cts = new();
@@ -78,6 +79,27 @@ public sealed class ConnectionManager : IAsyncDisposable
     /// <summary>Retry every disconnected peer now (network came back, IP changed, user asked).</summary>
     public void Wake() => _pulse.Pulse();
 
+    /// <summary>
+    /// Unverified address for a paired device (from LAN discovery). It is only tried as an extra candidate;
+    /// it becomes the stored address only after a TLS handshake proves the device's identity.
+    /// </summary>
+    public void AddAddressHint(DeviceId id, string host, int port)
+    {
+        if (_peers.Find(id) is not { } peer)
+        {
+            return;
+        }
+
+        var hint = (host, port);
+        var isNew = !_addressHints.TryGetValue(id, out var previous) || previous != hint;
+        _addressHints[id] = hint;
+        if (isNew && !IsConnected(id) && (peer.LastKnownHost != host || peer.LastKnownPort != port))
+        {
+            Log.AddressHint(_logger, id, $"{host}:{port}");
+            _pulse.Pulse();
+        }
+    }
+
     public PairingWindow OpenPairingWindow()
     {
         lock (_pairingGate)
@@ -96,7 +118,8 @@ public sealed class ConnectionManager : IAsyncDisposable
         }
     }
 
-    private bool IsAcceptingPairing
+    /// <summary>True while a pairing invitation (code) is open on this device.</summary>
+    public bool IsAcceptingPairing
     {
         get
         {
@@ -396,18 +419,23 @@ public sealed class ConnectionManager : IAsyncDisposable
                 return;
             }
 
-            if (peer.LastKnownHost is not null && peer.LastKnownPort is int port)
+            foreach (var (host, port) in DialCandidates(peer))
             {
                 try
                 {
-                    await DialAsync(peer, peer.LastKnownHost, port, cancellationToken).ConfigureAwait(false);
-                    delay = _options.ReconnectMinDelay;
-                    continue;
+                    await DialAsync(peer, host, port, cancellationToken).ConfigureAwait(false);
+                    break;
                 }
                 catch (Exception ex) when (PeerConnection.IsConnectionFailure(ex) && !cancellationToken.IsCancellationRequested)
                 {
-                    Log.ConnectFailed(_logger, peerId, $"{peer.LastKnownHost}:{port}", ex.GetType().Name);
+                    Log.ConnectFailed(_logger, peerId, $"{host}:{port}", ex.GetType().Name);
                 }
+            }
+
+            if (IsConnected(peerId))
+            {
+                delay = _options.ReconnectMinDelay;
+                continue;
             }
 
             var jitter = TimeSpan.FromMilliseconds(Random.Shared.Next(0, (int)Math.Max(1, delay.TotalMilliseconds / 4)));
@@ -420,6 +448,23 @@ public sealed class ConnectionManager : IAsyncDisposable
                 delay = TimeSpan.FromTicks(Math.Min(delay.Ticks * 2, _options.ReconnectMaxDelay.Ticks));
             }
         }
+    }
+
+    /// <summary>Verified last address first, then the discovery hint if it differs.</summary>
+    private List<(string Host, int Port)> DialCandidates(PairedDevice peer)
+    {
+        var candidates = new List<(string Host, int Port)>(2);
+        if (peer.LastKnownHost is not null && peer.LastKnownPort is int port)
+        {
+            candidates.Add((peer.LastKnownHost, port));
+        }
+
+        if (_addressHints.TryGetValue(peer.Id, out var hint) && !candidates.Contains(hint))
+        {
+            candidates.Add(hint);
+        }
+
+        return candidates;
     }
 
     private async Task DialAsync(PairedDevice peer, string host, int port, CancellationToken cancellationToken)
@@ -439,7 +484,9 @@ public sealed class ConnectionManager : IAsyncDisposable
                 throw new ProtocolException("Unexpected handshake response.");
             }
 
-            peer = Learn(peer, hello, address: null);
+            // The handshake proved the identity: this address is now verified.
+            peer = Learn(peer with { LastKnownHost = host }, hello, address: null);
+            _addressHints.TryRemove(peer.Id, out _);
             Register(new PeerConnection(client, ssl, peer, hello, isInitiator: true, _options, _time, _logger));
         }
         catch
