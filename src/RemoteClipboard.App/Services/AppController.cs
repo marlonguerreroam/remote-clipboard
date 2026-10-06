@@ -250,6 +250,13 @@ internal sealed class AppController : IAsyncDisposable
     {
         if (_settings.AutoStartConfigured)
         {
+            // Moved from the portable build to the installed one (or reinstalled elsewhere): keep the
+            // user's start-with-Windows choice working by pointing it to this copy.
+            if (Environment.ProcessPath is { } current)
+            {
+                AutoStart.RepairPath(current);
+            }
+
             return;
         }
 

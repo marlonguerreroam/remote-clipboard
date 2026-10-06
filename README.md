@@ -6,8 +6,8 @@ Portapapeles compartido, seguro y transparente entre computadores Windows de una
 Copias con **Ctrl+C** en un equipo y pegas con **Ctrl+V** en otro, también en Windows Server y
 sesiones RDP.
 
-> **Estado:** FASE 1 (MVP) completada: sincronización bidireccional cifrada de texto entre equipos
-> vinculados de la LAN. Hay un build portable para probar; el instalador llega en la FASE 4.
+> **Estado:** FASES 1, 2 y 4 completadas: sincronización cifrada de texto entre equipos vinculados de la
+> LAN, descubrimiento automático, configuración e instalador con firewall automático.
 
 ## Características
 
@@ -40,20 +40,23 @@ envía por **TCP + TLS mutuo** directamente a los dispositivos vinculados.
 | Sistema | Soporte |
 |---|---|
 | Windows 10 / Windows 11 (x64) | Objetivo principal |
-| Windows Server 2016 / 2019 / 2022 / 2025 (con Experiencia de escritorio) | Objetivo (FASE 3) |
+| Windows Server 2016 / 2019 / 2022 / 2025 (con Experiencia de escritorio) | Soportado (probado en servidor real) |
 | Windows Server Core | No soportado (sin escritorio interactivo) |
 
 El usuario final **no necesita instalar .NET** ni otras dependencias (publicación *self-contained*).
 
 ## Instalación y uso
 
-**Ahora (build portable):** en GitHub → *Releases* → última versión → descargar
-`RemoteClipboard-vX.Y.Z-win-x64.zip`. Descomprimir en cada equipo y ejecutar `RemoteClipboard.exe` (no
-requiere instalar .NET). Permitir la app en el firewall para redes privadas (ver [docs/TESTING.md](docs/TESTING.md)).
-Las compilaciones de cada commit también quedan 14 días como artefacto de *Actions → CI*.
+**Instalador (recomendado):** en GitHub → *Releases* → última versión → `RemoteClipboardSetup-vX.Y.Z.exe`.
+Instala en *Archivos de programa*, crea los accesos directos y **configura el firewall automáticamente**
+(solo redes privadas/dominio y subred local). Para actualizar, ejecuta el instalador nuevo encima: se
+conservan la configuración y los dispositivos vinculados. Detalles en [installer/README.md](installer/README.md).
+
+**Portable:** el mismo release incluye `RemoteClipboard-vX.Y.Z-win-x64.zip` (descomprimir y ejecutar; el
+firewall se configura a mano, ver [docs/TESTING.md](docs/TESTING.md)). No requiere instalar .NET.
+
 Configuración (icono ⚙ de la ventana o menú de la bandeja): nombre visible, visibilidad en la red,
 puerto, tema e inicio con Windows.
-A partir de la FASE 4: `RemoteClipboardSetup.exe`.
 
 ### Vinculación de dispositivos
 
@@ -89,7 +92,7 @@ src/RemoteClipboard.App       Aplicación WPF de bandeja (raíz de composición)
 tests/RemoteClipboard.Core.Tests     Unitarias + extremo a extremo (cualquier SO)
 tests/RemoteClipboard.Windows.Tests  Portapapeles Win32 real (sólo Windows)
 docs/                         Arquitectura, seguridad, networking
-installer/                    Inno Setup (FASE 4)
+installer/                    Instalador Inno Setup
 ```
 
 ## Desarrollo y compilación
@@ -119,8 +122,8 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 - [x] **FASE 0 — Arquitectura**: análisis, stack, estructura, primitivas base con pruebas.
 - [x] **FASE 1 — MVP**: monitor de portapapeles, identidad, TLS en LAN, vinculación, sync bidireccional, anti-loops.
 - [x] **FASE 2 — Aplicación completa**: descubrimiento automático, configuración, dirección por dispositivo, modo oscuro, icono definitivo.
-- [ ] **FASE 3 — Windows Server**: RDP, multiusuario, separación de sesiones.
-- [ ] **FASE 4 — Distribución**: instalador, autoarranque, firewall, actualización, firma.
+- [~] **FASE 3 — Windows Server**: probado en servidor real; pendiente validar varios usuarios RDP simultáneos.
+- [x] **FASE 4 — Distribución**: instalador (Inno Setup), firewall automático, inicio con Windows, actualización encima, firma preparada (falta certificado).
 - [ ] **FASE 5 — Avanzado**: imágenes, archivos, historial opcional, políticas (solo enviar / solo recibir).
 - [ ] **FASE 6 — Remoto**: relay entre redes (no planificado aún).
 
@@ -129,7 +132,7 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 - Sólo LAN; redes Wi-Fi con aislamiento de clientes impiden la comunicación directa (y el descubrimiento).
 - El menú de la bandeja no sigue el modo oscuro (control de WinForms).
 - Sólo texto (imágenes/archivos en FASE 5). Máximo 32 MiB por copia.
-- Sin instalador ni regla de firewall automática hasta la FASE 4.
 - Un mismo usuario con dos sesiones simultáneas en un servidor: sólo una ejecuta el agente.
-- Windows Server/RDP multiusuario diseñado pero aún no validado en servidores reales (FASE 3).
-- Sin firma de código hasta la FASE 4 (SmartScreen puede advertir).
+- Varios usuarios RDP simultáneos en el mismo servidor: diseñado para aislarlos, pendiente de validación manual.
+- Sin firma de código hasta disponer de un certificado (SmartScreen muestra "Editor desconocido").
+- Sin búsqueda automática de actualizaciones (por privacidad: la app no contacta Internet).

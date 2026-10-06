@@ -50,4 +50,8 @@ netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir
 | 16 | Configuración → Tema Oscuro / Claro / Sistema | Cambia al instante, incluida la barra de título |
 | 17 | Opciones de un dispositivo → "Solo recibir" | Este equipo recibe pero no envía a ese dispositivo |
 | 18 | Configuración → cambiar el nombre → Guardar → Reiniciar | El otro equipo muestra el nombre nuevo |
+| 20 | Ejecutar `RemoteClipboardSetup` (sin portable previo) | Pide permisos de administrador, instala, abre la app; existen las reglas "Remote Clipboard (TCP)" y "(descubrimiento)" en el Firewall de Windows |
+| 21 | Con la versión portable abierta y "Iniciar con Windows" activo, instalar | La portable se cierra; tras reiniciar sesión arranca la versión instalada |
+| 22 | Instalar una versión nueva encima | Se conserva la configuración y los dispositivos vinculados |
+| 23 | Desinstalar (Configuración de Windows → Aplicaciones) | Se cierra la app, desaparecen archivos, accesos y reglas de firewall; reinstalar recupera las vinculaciones |
 | 19 | Bandeja → Salir; volver a abrir la app. Repetir con Configuración → Guardar → "Reiniciar ahora" | La app se cierra del todo (no queda `RemoteClipboard.exe` en el Administrador de tareas) y vuelve a abrir |

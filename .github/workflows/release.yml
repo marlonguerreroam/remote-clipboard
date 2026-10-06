@@ -20,6 +20,9 @@ jobs:
     runs-on: windows-latest
     env:
       TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+      # Code signing runs only when the certificate secrets exist (see .github/scripts/sign.ps1).
+      # The secrets themselves are exposed only to the signing steps.
+      HAS_CODESIGN: ${{ secrets.CODESIGN_PFX_BASE64 != '' }}
     steps:
       - name: Validate version
         run: if ($env:TAG -notmatch '^v\d+\.\d+\.\d+$') { throw "Version must look like v1.2.3, got '$env:TAG'" }
@@ -31,9 +34,23 @@ jobs:
         run: dotnet test -c Release
       - name: Publish self-contained (win-x64)
         run: dotnet publish src/RemoteClipboard.App -c Release -r win-x64 --self-contained -p:PublishReadyToRun=true -p:Version=$($env:TAG.TrimStart('v')) -o publish/RemoteClipboard
-      - name: Package
+      - name: Sign application
+        if: env.HAS_CODESIGN == 'true'
+        run: .github/scripts/sign.ps1 -Files publish/RemoteClipboard/RemoteClipboard.exe
+        env:
+          CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
+          CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
+      - name: Package portable ZIP
         run: Compress-Archive -Path publish/RemoteClipboard/* -DestinationPath "RemoteClipboard-$env:TAG-win-x64.zip"
+      - name: Build installer
+        run: .github/scripts/build-installer.ps1 -Version ($env:TAG.TrimStart('v')) -SourceDir publish/RemoteClipboard
+      - name: Sign installer
+        if: env.HAS_CODESIGN == 'true'
+        run: .github/scripts/sign.ps1 -Files "installer/Output/RemoteClipboardSetup-$env:TAG.exe"
+        env:
+          CODESIGN_PFX_BASE64: ${{ secrets.CODESIGN_PFX_BASE64 }}
+          CODESIGN_PFX_PASSWORD: ${{ secrets.CODESIGN_PFX_PASSWORD }}
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$env:TAG" "RemoteClipboard-$env:TAG-win-x64.zip" --target "${{ github.sha }}" --title "Remote Clipboard $env:TAG" --generate-notes
+        run: gh release create "$env:TAG" "installer/Output/RemoteClipboardSetup-$env:TAG.exe" "RemoteClipboard-$env:TAG-win-x64.zip" --target "${{ github.sha }}" --title "Remote Clipboard $env:TAG" --generate-notes
