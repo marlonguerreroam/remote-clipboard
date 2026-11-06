@@ -5,11 +5,13 @@ using System.Runtime.InteropServices;
 
 namespace RemoteClipboard.Windows.Interop;
 
-/// <summary>Documented Win32 clipboard and global-memory APIs (available since Windows Vista).</summary>
+/// <summary>Documented Win32 clipboard, drag-and-drop file list and global-memory APIs (Windows Vista+).</summary>
 internal static partial class NativeMethods
 {
     public const int WM_CLIPBOARDUPDATE = 0x031D;
+    public const uint CF_DIB = 8;
     public const uint CF_UNICODETEXT = 13;
+    public const uint CF_HDROP = 15;
     public const uint GMEM_MOVEABLE = 0x0002;
     public static readonly IntPtr HWND_MESSAGE = new(-3);
 
@@ -64,4 +66,8 @@ internal static partial class NativeMethods
 
     [LibraryImport("kernel32.dll", SetLastError = true)]
     public static partial nuint GlobalSize(IntPtr hMem);
+
+    /// <summary>Count (iFile = 0xFFFFFFFF) or path of the files in a CF_HDROP list.</summary>
+    [LibraryImport("shell32.dll", EntryPoint = "DragQueryFileW")]
+    public static unsafe partial uint DragQueryFile(IntPtr hDrop, uint iFile, char* lpszFile, uint cch);
 }
