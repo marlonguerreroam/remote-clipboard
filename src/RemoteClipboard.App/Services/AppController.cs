@@ -7,12 +7,14 @@ using Microsoft.Extensions.Logging;
 using RemoteClipboard.App.Tray;
 using RemoteClipboard.App.Views;
 using RemoteClipboard.Core.Agent;
+using RemoteClipboard.Core.Clipboard;
 using RemoteClipboard.Core.Configuration;
 using RemoteClipboard.Core.Devices;
 using RemoteClipboard.Core.Discovery;
 using RemoteClipboard.Core.Licensing;
 using RemoteClipboard.Core.Logging;
 using RemoteClipboard.Core.Networking;
+using RemoteClipboard.Core.Protocol;
 using RemoteClipboard.Core.Sync;
 using RemoteClipboard.Windows.Clipboard;
 using RemoteClipboard.Windows.Platform;
@@ -104,14 +106,20 @@ internal sealed class AppController : IAsyncDisposable
         Log.IdentityLoaded(startupLog, identity.Id, identityResult.ToString());
 
         var peers = new PeerStore(Path.Combine(AppPaths.DataDirectory, "peers.json"));
-        var clipboard = new WindowsClipboard(loggerFactory.CreateLogger<WindowsClipboard>());
+        var clipboard = new WindowsClipboard(loggerFactory.CreateLogger<WindowsClipboard>())
+        {
+            ReadImages = settings.SyncImages,
+            ReadFiles = settings.SyncFiles,
+            ReceivedFiles = new ReceivedFilesStore(AppPaths.ReceivedFilesDirectory),
+        };
+        clipboard.ReceivedFiles.Cleanup(); // files received more than a day ago
         var agent = new RemoteClipboardAgent(
             identity,
             new LocalDeviceInfo(settings.DisplayName ?? Environment.MachineName, WindowsSystemInfo.OsDescription),
             peers,
             clipboard,
             clipboard,
-            new ConnectionOptions { PreferredPort = settings.PreferredPort },
+            new ConnectionOptions { PreferredPort = settings.PreferredPort, AcceptedFormats = settings.AcceptedFormats() },
             loggerFactory,
             discovery: new DiscoveryOptions { Enabled = settings.DiscoveryEnabled })
         {
@@ -143,6 +151,13 @@ internal sealed class AppController : IAsyncDisposable
         _licenseTimer.Start();
         Agent.StateChanged += (_, _) => OnUi(RefreshUi);
         Agent.Paired += (_, device) => OnUi(() => _tray?.Notify("Dispositivo vinculado", $"{device.DisplayName} ya comparte el portapapeles con este equipo."));
+        Agent.ContentReceived += (_, received) => OnUi(() => NotifyReceived(received));
+        Agent.ContentTooLarge += (_, format) => OnUi(() => _tray?.Notify("No se envió al otro equipo", format switch
+        {
+            ClipboardFormat.FileList => $"Los archivos copiados superan {ProtocolLimits.MaxFileListBytes / (1024 * 1024)} MB.",
+            ClipboardFormat.Image => "La imagen copiada es demasiado grande.",
+            _ => $"El texto copiado supera {ProtocolLimits.MaxClipboardBytes / (1024 * 1024)} MB.",
+        }));
         RefreshUi();
         if (showWindow)
         {
@@ -195,6 +210,8 @@ internal sealed class AppController : IAsyncDisposable
         var restartRequired =
             updated.DisplayName != _settings.DisplayName
             || updated.DiscoveryEnabled != _settings.DiscoveryEnabled
+            || updated.SyncImages != _settings.SyncImages
+            || updated.SyncFiles != _settings.SyncFiles
             || updated.PreferredPort != _settings.PreferredPort;
 
         SaveSettings(updated);
@@ -365,6 +382,16 @@ internal sealed class AppController : IAsyncDisposable
         catch (IOException)
         {
             // Preferences are not critical; keep running with in-memory values.
+        }
+    }
+
+    private void NotifyReceived(ReceivedContent received)
+    {
+        // Text and images are visible at once when pasting; files deserve a hint about where they are.
+        if (received.Format == ClipboardFormat.FileList)
+        {
+            var from = Agent.Devices.FirstOrDefault(d => d.Device.Id == received.From)?.Device.DisplayName ?? "otro equipo";
+            _tray?.Notify("Archivos recibidos", $"De {from}. Pégalos con Ctrl+V en cualquier carpeta.");
         }
     }
 

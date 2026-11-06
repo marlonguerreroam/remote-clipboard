@@ -11,8 +11,10 @@ namespace RemoteClipboard.Core.Clipboard;
 /// (e.g. password managers via ExcludeClipboardContentFromMonitorProcessing).</param>
 /// <param name="IsTooLarge">True when the clipboard holds supported content that exceeds the size limit
 /// (it is not read into memory in that case).</param>
+/// <param name="TooLargeFormat">With <paramref name="IsTooLarge"/>: the kind of content that was too large.</param>
 public sealed record ClipboardChange(
     ClipboardContent? Content,
     bool HasRemoteOriginMarker,
     bool IsExcludedByOwner,
-    bool IsTooLarge = false);
+    bool IsTooLarge = false,
+    ClipboardFormat TooLargeFormat = ClipboardFormat.Text);

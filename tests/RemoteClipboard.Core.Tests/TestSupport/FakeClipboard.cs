@@ -13,6 +13,7 @@ internal sealed class FakeClipboard(bool markerSurvives = true) : IClipboardMoni
 {
     private readonly Lock _gate = new();
     private string? _text;
+    private ClipboardContent? _content;
 
     public event EventHandler<ClipboardChange>? ClipboardChanged;
 
@@ -29,25 +30,48 @@ internal sealed class FakeClipboard(bool markerSurvives = true) : IClipboardMoni
         }
     }
 
+    /// <summary>Last content on this clipboard (copied locally or received), any format.</summary>
+    public ClipboardContent? Content
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _content;
+            }
+        }
+    }
+
     public void Start()
     {
     }
 
     public void UserCopies(string text)
     {
+        UserCopies(ClipboardContent.FromText(text));
+    }
+
+    public void UserCopies(ClipboardContent content)
+    {
         lock (_gate)
         {
-            _text = text;
+            _content = content;
+            _text = content.Format == ClipboardFormat.Text ? content.GetText() : null;
         }
 
-        ClipboardChanged?.Invoke(this, new ClipboardChange(ClipboardContent.FromText(text), false, false));
+        ClipboardChanged?.Invoke(this, new ClipboardChange(content, false, false));
     }
+
+    /// <summary>The user copied something larger than the limit for its kind (it is never read).</summary>
+    public void UserCopiesTooLarge(ClipboardFormat format) =>
+        ClipboardChanged?.Invoke(this, new ClipboardChange(null, false, false, IsTooLarge: true, TooLargeFormat: format));
 
     public Task WriteRemoteContentAsync(ClipboardContent content, CancellationToken cancellationToken)
     {
         lock (_gate)
         {
-            _text = content.GetText();
+            _content = content;
+            _text = content.Format == ClipboardFormat.Text ? content.GetText() : null;
             RemoteWrites++;
         }
 

@@ -50,14 +50,16 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
         _connections = new ConnectionManager(identity, info, peers, options, loggerFactory.CreateLogger<ConnectionManager>(), time);
         _sync = new SyncEngine(
             identity.Id, writer, () => _connections.Connections, loggerFactory.CreateLogger<SyncEngine>(), time,
-            id => _peers.Find(id)?.Direction ?? SyncDirection.Bidirectional);
+            id => _peers.Find(id)?.Direction ?? SyncDirection.Bidirectional,
+            options.AcceptedFormats);
         _connections.MessageHandler = _sync.OnMessageAsync;
         _connections.Connected += (_, _) => RaiseStateChanged();
         _connections.Disconnected += (_, _) => RaiseStateChanged();
         _connections.PairedAsHost += (_, device) => Paired?.Invoke(this, device);
         _peers.Changed += (_, _) => RaiseStateChanged();
         _sync.ContentSent += (_, _) => ContentSent?.Invoke(this, EventArgs.Empty);
-        _sync.ContentReceived += (_, id) => ContentReceived?.Invoke(this, id);
+        _sync.ContentReceived += (_, received) => ContentReceived?.Invoke(this, received);
+        _sync.ContentTooLarge += (_, format) => ContentTooLarge?.Invoke(this, format);
 
         if (discovery is { Enabled: true })
         {
@@ -93,7 +95,10 @@ public sealed class RemoteClipboardAgent : IAsyncDisposable
 
     public event EventHandler? ContentSent;
 
-    public event EventHandler<DeviceId>? ContentReceived;
+    public event EventHandler<ReceivedContent>? ContentReceived;
+
+    /// <summary>A local copy was not sent because it exceeds the size limit for its kind.</summary>
+    public event EventHandler<ClipboardFormat>? ContentTooLarge;
 
     public DeviceId DeviceId => _identity.Id;
 

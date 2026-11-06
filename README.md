@@ -12,6 +12,9 @@ sesiones RDP.
 ## Características
 
 - Texto plano Unicode: español, emojis, saltos de línea; textos largos (hasta 32 MiB por copia).
+- **Imágenes**: capturas de pantalla e imágenes copiadas de cualquier app (hasta 32 MiB).
+- **Archivos y carpetas** copiados en el Explorador: Ctrl+C en un equipo, Ctrl+V en una carpeta del otro
+  (hasta 128 MiB por copia).
 - Sincronización bidireccional automática entre equipos vinculados de la LAN.
 - Vinculación explícita con código de 6 dígitos (J-PAKE, resistente a ataques offline).
 - Cifrado TLS con autenticación mutua y pinning de clave pública.
@@ -145,14 +148,16 @@ portapapeles, eventos de log sólo en `Core/Logging/Log.cs`, commits convenciona
 - [x] **FASE 2 — Aplicación completa**: descubrimiento automático, configuración, dirección por dispositivo, modo oscuro, icono definitivo.
 - [~] **FASE 3 — Windows Server**: probado en servidor real; pendiente validar varios usuarios RDP simultáneos.
 - [x] **FASE 4 — Distribución**: instalador (Inno Setup), firewall automático, inicio con Windows, actualización encima, firma preparada (falta certificado).
-- [ ] **FASE 5 — Avanzado**: imágenes, archivos, historial opcional, políticas (solo enviar / solo recibir).
+- [~] **FASE 5 — Avanzado**: imágenes y archivos ✅, solo enviar / solo recibir ✅; pendiente historial opcional.
 - [ ] **FASE 6 — Remoto**: relay entre redes (no planificado aún).
 
 ## Limitaciones conocidas
 
 - Sólo LAN; redes Wi-Fi con aislamiento de clientes impiden la comunicación directa (y el descubrimiento).
 - El menú de la bandeja no sigue el modo oscuro (control de WinForms).
-- Sólo texto (imágenes/archivos en FASE 5). Máximo 32 MiB por copia.
+- Máximo 32 MiB por copia de texto o imagen y 128 MiB por copia de archivos (se avisa si se supera).
+- Los archivos se transfieren al copiarlos, no al pegarlos: copiar archivos grandes ocupa la red aunque no
+  se peguen. Un equipo con una versión anterior solo recibe texto.
 - Un mismo usuario con dos sesiones simultáneas en un servidor: sólo una ejecuta el agente.
 - Varios usuarios RDP simultáneos en el mismo servidor: diseñado para aislarlos, pendiente de validación manual.
 - Sin firma de código hasta disponer de un certificado (SmartScreen muestra "Editor desconocido").

@@ -28,12 +28,17 @@ public sealed class ClipboardEchoGuard
 {
     private readonly byte[] _fingerprintKey = RandomNumberGenerator.GetBytes(32);
     private readonly Lock _gate = new();
-    private readonly int _maxContentBytes;
+    private readonly int? _maxContentBytes;
     private byte[]? _lastSyncedFingerprint;
 
-    public ClipboardEchoGuard(int maxContentBytes = ProtocolLimits.MaxClipboardBytes)
+    /// <param name="maxContentBytes">Size limit for every format; null uses the per-format protocol limits.</param>
+    public ClipboardEchoGuard(int? maxContentBytes = null)
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxContentBytes);
+        if (maxContentBytes is { } max)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(max);
+        }
+
         _maxContentBytes = maxContentBytes;
     }
 
@@ -71,7 +76,7 @@ public sealed class ClipboardEchoGuard
             return OutboundDecision.SkipEmpty;
         }
 
-        if (content.Length > _maxContentBytes)
+        if (content.Length > (_maxContentBytes ?? ProtocolLimits.MaxContentBytes(content.Format)))
         {
             return OutboundDecision.SkipTooLarge;
         }

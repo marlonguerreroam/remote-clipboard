@@ -42,6 +42,10 @@ conexión TCP persistente.
 `pairRequest`, `pairRound1`, `pairRound2`, `pairConfirm`, `pairResult`. Discriminador `type` estable; los
 tipos nuevos (imágenes, archivos, rotación de claves) se añaden sin romper versiones anteriores.
 
+**Formatos:** texto (UTF-8), imagen (PNG) y archivos (ZIP), con el mismo mensaje `clipboard` y su campo
+`format`. Cada equipo anuncia en `hello.accepts` qué formatos acepta; el campo es opcional, la versión del
+protocolo no cambia y las versiones anteriores lo ignoran, así que solo reciben texto.
+
 **Textos largos:** cada copia (≤ 32 MiB) se envía como mensajes `clipboard` consecutivos de ≤ 256 KiB
 (trama ≤ 1 MiB). El receptor valida cada cabecera (tamaño total, índice, origen) **antes** de reservar
 memoria; una copia nueva abandona una transferencia incompleta (gana la más reciente).

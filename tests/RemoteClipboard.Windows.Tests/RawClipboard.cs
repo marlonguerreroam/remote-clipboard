@@ -75,6 +75,78 @@ internal static class RawClipboard
         }
     }
 
+    /// <summary>Puts several formats on the clipboard at once, like an application copying something.</summary>
+    public static void SetFormats(params (uint Format, byte[] Data)[] formats)
+    {
+        lock (Gate)
+        {
+            _owner ??= CreateOwner();
+            Open(_owner.Handle);
+            try
+            {
+                Check(EmptyClipboard(), "EmptyClipboard");
+                foreach (var (format, data) in formats)
+                {
+                    SetGlobal(format, data);
+                }
+            }
+            finally
+            {
+                CloseClipboard();
+            }
+        }
+    }
+
+    public static uint Format(string name) => RegisterClipboardFormat(name);
+
+    /// <summary>Contents of one format, or null when absent.</summary>
+    public static unsafe byte[]? GetData(uint format)
+    {
+        lock (Gate)
+        {
+            Open(IntPtr.Zero);
+            try
+            {
+                var handle = GetClipboardData(format);
+                if (handle == IntPtr.Zero)
+                {
+                    return null;
+                }
+
+                var pointer = GlobalLock(handle);
+                try
+                {
+                    return new ReadOnlySpan<byte>((void*)pointer, (int)GlobalSize(handle)).ToArray();
+                }
+                finally
+                {
+                    GlobalUnlock(handle);
+                }
+            }
+            finally
+            {
+                CloseClipboard();
+            }
+        }
+    }
+
+    public static IReadOnlyList<string> GetFiles()
+    {
+        lock (Gate)
+        {
+            Open(IntPtr.Zero);
+            try
+            {
+                var handle = GetClipboardData(CF_HDROP);
+                return handle == IntPtr.Zero ? [] : RemoteClipboard.Windows.Clipboard.DropFiles.Read(handle);
+            }
+            finally
+            {
+                CloseClipboard();
+            }
+        }
+    }
+
     private static NativeWindow CreateOwner()
     {
         var window = new NativeWindow();

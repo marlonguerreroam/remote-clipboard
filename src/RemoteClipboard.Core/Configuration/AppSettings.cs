@@ -16,6 +16,11 @@ public enum AppTheme
 }
 
 /// <summary>User preferences. Contains no secrets.</summary>
+/// <remarks>
+/// Properties with a default value use <c>set</c>, not <c>init</c>: the source-generated serializer
+/// assigns init-only properties in the object initializer, so a property missing from an older
+/// settings.json would become false/0 instead of keeping its default.
+/// </remarks>
 public sealed record AppSettings
 {
     public const int MaxDisplayNameLength = 64;
@@ -24,14 +29,28 @@ public sealed record AppSettings
     public string? DisplayName { get; init; }
 
     /// <summary>Announce this device on the LAN and list others (UDP 47810).</summary>
-    public bool DiscoveryEnabled { get; init; } = true;
+    public bool DiscoveryEnabled { get; set; } = true;
 
-    public AppTheme Theme { get; init; } = AppTheme.System;
+    public AppTheme Theme { get; set; } = AppTheme.System;
 
-    public bool SyncEnabled { get; init; } = true;
+    public bool SyncEnabled { get; set; } = true;
+
+    /// <summary>Send and receive images (screenshots, copied pictures).</summary>
+    public bool SyncImages { get; set; } = true;
+
+    /// <summary>Send and receive files and folders copied in Explorer.</summary>
+    public bool SyncFiles { get; set; } = true;
+
+    /// <summary>Clipboard formats this device sends and accepts, as configured.</summary>
+    public IReadOnlyList<Clipboard.ClipboardFormat> AcceptedFormats() =>
+    [
+        Clipboard.ClipboardFormat.Text,
+        .. SyncImages ? [Clipboard.ClipboardFormat.Image] : Array.Empty<Clipboard.ClipboardFormat>(),
+        .. SyncFiles ? [Clipboard.ClipboardFormat.FileList] : Array.Empty<Clipboard.ClipboardFormat>(),
+    ];
 
     /// <summary>First TCP port tried; the next free one up to <see cref="ProtocolLimits.LastTcpPort"/> is used if busy.</summary>
-    public int PreferredPort { get; init; } = ProtocolLimits.DefaultTcpPort;
+    public int PreferredPort { get; set; } = ProtocolLimits.DefaultTcpPort;
 
     /// <summary>Set once the first-run start-with-Windows default has been applied.</summary>
     public bool AutoStartConfigured { get; init; }

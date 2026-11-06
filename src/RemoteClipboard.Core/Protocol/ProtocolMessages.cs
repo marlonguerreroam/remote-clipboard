@@ -23,12 +23,20 @@ namespace RemoteClipboard.Core.Protocol;
 public abstract record ProtocolMessage;
 
 /// <summary>First message of a sync connection, sent by both sides.</summary>
+/// <param name="Accepts">Clipboard formats this device accepts besides text. Absent in versions before
+/// images and files (they ignore the field), which therefore only ever receive text: the protocol version
+/// stays the same and old and new devices keep connecting.</param>
 public sealed record HelloMessage(
     int ProtocolVersion,
     Guid DeviceId,
     string DisplayName,
     string OsDescription,
-    int ListenPort) : ProtocolMessage;
+    int ListenPort,
+    IReadOnlyList<ClipboardFormat>? Accepts = null) : ProtocolMessage
+{
+    /// <summary>Whether the device that sent this hello can receive <paramref name="format"/>.</summary>
+    public bool CanReceive(ClipboardFormat format) => format == ClipboardFormat.Text || (Accepts?.Contains(format) ?? false);
+}
 
 /// <summary>
 /// One chunk of a clipboard change originated on <paramref name="OriginDeviceId"/>. Content larger than

@@ -5,6 +5,7 @@ using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RemoteClipboard.Core.Agent;
+using RemoteClipboard.Core.Clipboard;
 using RemoteClipboard.Core.Devices;
 using RemoteClipboard.Core.Discovery;
 using RemoteClipboard.Core.Networking;
@@ -32,11 +33,13 @@ internal sealed class TestAgent : IAsyncDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly bool _markerSurvives;
     private readonly TestLan? _lan;
+    private readonly IReadOnlyList<ClipboardFormat>? _accepts;
     private DiscoveryOptions? _discovery;
     private DeviceIdentity _identity = null!;
 
-    private TestAgent(string name, ILoggerFactory? loggerFactory, bool markerSurvives, TestLan? lan)
+    private TestAgent(string name, ILoggerFactory? loggerFactory, bool markerSurvives, TestLan? lan, IReadOnlyList<ClipboardFormat>? accepts)
     {
+        _accepts = accepts;
         Name = name;
         _loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
         _markerSurvives = markerSurvives;
@@ -57,9 +60,12 @@ internal sealed class TestAgent : IAsyncDisposable
 
     public int Port => Agent.ListenPort;
 
-    public static TestAgent Start(string name, ILoggerFactory? loggerFactory = null, bool markerSurvives = true, TestLan? lan = null)
+    /// <param name="accepts">Formats this device accepts (null = all, as the current version).</param>
+    public static TestAgent Start(
+        string name, ILoggerFactory? loggerFactory = null, bool markerSurvives = true, TestLan? lan = null,
+        IReadOnlyList<ClipboardFormat>? accepts = null)
     {
-        var agent = new TestAgent(name, loggerFactory, markerSurvives, lan);
+        var agent = new TestAgent(name, loggerFactory, markerSurvives, lan, accepts);
         agent.Boot(0);
         return agent;
     }
@@ -101,7 +107,8 @@ internal sealed class TestAgent : IAsyncDisposable
         _discovery = _lan?.Join();
         Agent = new RemoteClipboardAgent(
             _identity, new LocalDeviceInfo(Name, "Test OS"), Peers, Clipboard, Clipboard,
-            FastOptions with { PreferredPort = port }, _loggerFactory, discovery: _discovery);
+            FastOptions with { PreferredPort = port, AcceptedFormats = _accepts ?? FastOptions.AcceptedFormats },
+            _loggerFactory, discovery: _discovery);
         Agent.ContentSent += (_, _) => SentCount++;
         Agent.Start();
     }

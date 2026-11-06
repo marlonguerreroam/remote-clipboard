@@ -17,11 +17,13 @@ namespace RemoteClipboard.Windows.Clipboard;
 /// <summary>
 /// Win32 clipboard integration. A dedicated STA thread owns a message-only window registered with
 /// AddClipboardFormatListener, so changes arrive as WM_CLIPBOARDUPDATE events (no polling).
-/// All clipboard reads and writes run on that thread.
+/// All clipboard reads and writes run on that thread; slow work (archiving files, converting images)
+/// runs on the thread pool so the clipboard is never held while it happens.
 /// </summary>
 /// <remarks>
-/// <see cref="ClipboardChanged"/> is raised on the clipboard thread: handlers must return quickly.
-/// Content is not even read when the owner marked it as private or when it was written by us.
+/// <see cref="ClipboardChanged"/> is raised on the clipboard thread (text) or a pool thread (images,
+/// files): handlers must return quickly. Content is not even read when the owner marked it as private
+/// or when it was written by us. Priority when several formats are present: files, text, image.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
@@ -36,6 +38,13 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
     private const string CanUploadToCloudFormatName = "CanUploadToCloud";
     private const string ViewerIgnoreFormatName = "Clipboard Viewer Ignore";
 
+    private const string PngFormatName = "PNG";
+    private const string PreferredDropEffectFormatName = "Preferred DropEffect";
+    private const int DropEffectCopy = 1;
+
+    /// <summary>Raw bitmaps can be much larger than their PNG (a 4K screenshot is ~33 MB as CF_DIB).</summary>
+    private const int MaxDibBytes = 256 * 1024 * 1024;
+
     private const int OpenAttempts = 6;
 
     private readonly ILogger _logger;
@@ -45,6 +54,8 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
     private readonly uint _canIncludeInHistoryFormat;
     private readonly uint _canUploadToCloudFormat;
     private readonly uint _viewerIgnoreFormat;
+    private readonly uint _pngFormat;
+    private readonly uint _preferredDropEffectFormat;
     private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Thread? _thread;
     private SynchronizationContext? _context;
@@ -61,7 +72,19 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
         _canIncludeInHistoryFormat = Register(CanIncludeInHistoryFormatName);
         _canUploadToCloudFormat = Register(CanUploadToCloudFormatName);
         _viewerIgnoreFormat = Register(ViewerIgnoreFormatName);
+        _pngFormat = Register(PngFormatName);
+        _preferredDropEffectFormat = Register(PreferredDropEffectFormatName);
+        ReceivedFiles = new ReceivedFilesStore(Path.Combine(Path.GetTempPath(), "RemoteClipboard-received"));
     }
+
+    /// <summary>Send copied images (Settings). When off, images are not even read.</summary>
+    public bool ReadImages { get; set; } = true;
+
+    /// <summary>Send copied files and folders (Settings). When off, they are not even read.</summary>
+    public bool ReadFiles { get; set; } = true;
+
+    /// <summary>Where received files are extracted (they must exist on disk to be pasted).</summary>
+    public ReceivedFilesStore ReceivedFiles { get; set; }
 
     public event EventHandler<ClipboardChange>? ClipboardChanged;
 
@@ -79,15 +102,22 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
         _ready.Task.GetAwaiter().GetResult();
     }
 
-    public Task WriteRemoteContentAsync(ClipboardContent content, CancellationToken cancellationToken)
+    public async Task WriteRemoteContentAsync(ClipboardContent content, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(content);
-        return InvokeAsync(() => WriteCore(content), cancellationToken);
+        // Extraction and image conversion happen before the clipboard is opened.
+        var formats = await Task.Run(() => Prepare(content), cancellationToken).ConfigureAwait(false);
+        await InvokeAsync(() => WriteCore(formats), cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Reads the current clipboard on the clipboard thread (used by tests and diagnostics).</summary>
-    public Task<ClipboardChange?> ReadAsync(CancellationToken cancellationToken) =>
-        InvokeAsync(ReadSnapshot, cancellationToken);
+    /// <summary>Reads the current clipboard (used by tests and diagnostics), including slow conversions.</summary>
+    public async Task<ClipboardChange?> ReadAsync(CancellationToken cancellationToken)
+    {
+        var read = await InvokeAsync(ReadSnapshot, cancellationToken).ConfigureAwait(false);
+        return read.Deferred is { } deferred
+            ? await Task.Run(deferred, cancellationToken).ConfigureAwait(false)
+            : read.Change;
+    }
 
     public void Dispose()
     {
@@ -146,13 +176,44 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
         }
 
         _lastSequence = sequence;
-        var change = ReadSnapshot();
-        if (change is null)
+        var read = ReadSnapshot();
+        if (read.Deferred is { } deferred)
         {
+            _ = Task.Run(() =>
+            {
+                var change = SafeBuild(deferred);
+                // The user copied something else meanwhile: that newer change wins.
+                if (change is not null && GetClipboardSequenceNumber() == sequence)
+                {
+                    Raise(change);
+                }
+            });
             return;
         }
 
-        Log.ClipboardEventDetected(_logger, change.Content?.Format ?? ClipboardFormat.Unknown);
+        if (read.Change is { } immediate)
+        {
+            Raise(immediate);
+        }
+    }
+
+    private ClipboardChange? SafeBuild(Func<ClipboardChange?> build)
+    {
+        try
+        {
+            return build();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException
+            or InvalidOperationException or System.Runtime.InteropServices.ExternalException)
+        {
+            Log.UnexpectedError(_logger, "clipboard read", ex);
+            return null;
+        }
+    }
+
+    private void Raise(ClipboardChange change)
+    {
+        Log.ClipboardEventDetected(_logger, change.Content?.Format ?? change.TooLargeFormat);
         try
         {
             ClipboardChanged?.Invoke(this, change);
@@ -165,12 +226,16 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
         }
     }
 
-    private ClipboardChange? ReadSnapshot()
+    /// <summary>
+    /// What the clipboard holds. Copies raw data only while the clipboard is open; <c>Deferred</c> does
+    /// the slow part (archiving, image conversion) afterwards, off the clipboard thread.
+    /// </summary>
+    private (ClipboardChange? Change, Func<ClipboardChange?>? Deferred) ReadSnapshot()
     {
         if (!TryOpenClipboard())
         {
             Log.ClipboardBusy(_logger);
-            return null;
+            return (null, null);
         }
 
         try
@@ -180,31 +245,34 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
                 || IsClipboardFormatAvailable(_viewerIgnoreFormat)
                 || DwordFormatIsZero(_canIncludeInHistoryFormat)
                 || DwordFormatIsZero(_canUploadToCloudFormat);
-
-            if (hasMarker || excluded || !IsClipboardFormatAvailable(CF_UNICODETEXT))
+            if (hasMarker || excluded)
             {
                 // Never read content we are not going to send.
-                return new ClipboardChange(null, hasMarker, excluded);
+                return (new ClipboardChange(null, hasMarker, excluded), null);
             }
 
-            var handle = GetClipboardData(CF_UNICODETEXT);
-            if (handle == IntPtr.Zero)
+            if (ReadFiles && IsClipboardFormatAvailable(CF_HDROP))
             {
-                return new ClipboardChange(null, false, false);
+                return ReadFileList();
             }
 
-            var maxChars = (long)(GlobalSize(handle) / 2);
-            // Every UTF-16 char is at least one UTF-8 byte: more chars than the byte limit can never fit.
-            if (maxChars - 1 > _maxContentBytes)
+            if (IsClipboardFormatAvailable(CF_UNICODETEXT))
             {
-                return new ClipboardChange(null, false, false, IsTooLarge: true);
+                return (ReadText(), null);
             }
 
-            var text = ReadUnicodeText(handle, (int)maxChars);
-            var content = ClipboardContent.FromText(text);
-            return content.Length > _maxContentBytes
-                ? new ClipboardChange(null, false, false, IsTooLarge: true)
-                : new ClipboardChange(content, false, false);
+            if (ReadImages && IsClipboardFormatAvailable(_pngFormat) && ReadGlobal(_pngFormat, _maxContentBytes) is { } png
+                && ImageCodec.IsPng(png))
+            {
+                return (new ClipboardChange(ClipboardContent.FromBytes(ClipboardFormat.Image, png), false, false), null);
+            }
+
+            if (ReadImages && IsClipboardFormatAvailable(CF_DIB))
+            {
+                return ReadDib();
+            }
+
+            return (new ClipboardChange(null, false, false), null);
         }
         finally
         {
@@ -212,9 +280,138 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
         }
     }
 
-    private void WriteCore(ClipboardContent content)
+    private ClipboardChange ReadText()
     {
-        var text = content.GetText();
+        var handle = GetClipboardData(CF_UNICODETEXT);
+        if (handle == IntPtr.Zero)
+        {
+            return new ClipboardChange(null, false, false);
+        }
+
+        var maxChars = (long)(GlobalSize(handle) / 2);
+        // Every UTF-16 char is at least one UTF-8 byte: more chars than the byte limit can never fit.
+        if (maxChars - 1 > _maxContentBytes)
+        {
+            return new ClipboardChange(null, false, false, IsTooLarge: true);
+        }
+
+        var text = ReadUnicodeText(handle, (int)maxChars);
+        var content = ClipboardContent.FromText(text);
+        return content.Length > _maxContentBytes
+            ? new ClipboardChange(null, false, false, IsTooLarge: true)
+            : new ClipboardChange(content, false, false);
+    }
+
+    private static (ClipboardChange?, Func<ClipboardChange?>?) ReadFileList()
+    {
+        var handle = GetClipboardData(CF_HDROP);
+        var paths = handle == IntPtr.Zero ? [] : DropFiles.Read(handle);
+        if (paths.Count == 0)
+        {
+            return (new ClipboardChange(null, false, false), null);
+        }
+
+        return (null, () =>
+        {
+            if (!paths.Any(p => File.Exists(p) || Directory.Exists(p)))
+            {
+                return new ClipboardChange(null, false, false);
+            }
+
+            var archive = FileArchive.Create(paths, ProtocolLimits.MaxFileListBytes);
+            return archive is null
+                ? new ClipboardChange(null, false, false, IsTooLarge: true, TooLargeFormat: ClipboardFormat.FileList)
+                : new ClipboardChange(ClipboardContent.FromBytes(ClipboardFormat.FileList, archive), false, false);
+        });
+    }
+
+    private (ClipboardChange?, Func<ClipboardChange?>?) ReadDib()
+    {
+        var dib = ReadGlobal(CF_DIB, MaxDibBytes);
+        if (dib is null)
+        {
+            return (new ClipboardChange(null, false, false, IsTooLarge: true, TooLargeFormat: ClipboardFormat.Image), null);
+        }
+
+        return (null, () =>
+        {
+            var png = ImageCodec.DibToPng(dib);
+            return png.Length > _maxContentBytes
+                ? new ClipboardChange(null, false, false, IsTooLarge: true, TooLargeFormat: ClipboardFormat.Image)
+                : new ClipboardChange(ClipboardContent.FromBytes(ClipboardFormat.Image, png), false, false);
+        });
+    }
+
+    /// <summary>Copy of a clipboard memory block, or null when it is larger than <paramref name="maxBytes"/>.</summary>
+    private static unsafe byte[]? ReadGlobal(uint format, int maxBytes)
+    {
+        var handle = GetClipboardData(format);
+        if (handle == IntPtr.Zero)
+        {
+            return [];
+        }
+
+        var size = GlobalSize(handle);
+        if (size > (nuint)maxBytes)
+        {
+            return null;
+        }
+
+        var pointer = GlobalLock(handle);
+        if (pointer == IntPtr.Zero)
+        {
+            return [];
+        }
+
+        try
+        {
+            return new ReadOnlySpan<byte>((void*)pointer, (int)size).ToArray();
+        }
+        finally
+        {
+            GlobalUnlock(handle);
+        }
+    }
+
+    /// <summary>The clipboard formats to write for received content (slow work happens here, off-thread).</summary>
+    private List<(uint Format, byte[] Data, bool AppendNullChar)> Prepare(ClipboardContent content)
+    {
+        switch (content.Format)
+        {
+            case ClipboardFormat.Text:
+                return [(CF_UNICODETEXT, MemoryMarshal.AsBytes(content.GetText().AsSpan()).ToArray(), true)];
+
+            case ClipboardFormat.Image:
+                var png = content.Data.ToArray();
+                // PNG keeps transparency for apps that read it; CF_DIB is what every app understands.
+                return [(CF_DIB, ImageCodec.PngToDib(png), false), (_pngFormat, png, false)];
+
+            case ClipboardFormat.FileList:
+                var directory = ReceivedFiles.CreateTransferDirectory();
+                try
+                {
+                    var paths = FileArchive.Extract(content.Data, directory, ProtocolLimits.MaxFileListBytes);
+                    MarkOfTheWeb.Apply(paths);
+                    return
+                    [
+                        (CF_HDROP, DropFiles.Build(paths), false),
+                        // Paste copies (never moves) out of the received-files folder.
+                        (_preferredDropEffectFormat, BitConverter.GetBytes(DropEffectCopy), false),
+                    ];
+                }
+                catch
+                {
+                    ReceivedFilesStore.TryDelete(new DirectoryInfo(directory));
+                    throw;
+                }
+
+            default:
+                throw new InvalidOperationException($"Unsupported clipboard format {content.Format}.");
+        }
+    }
+
+    private void WriteCore(List<(uint Format, byte[] Data, bool AppendNullChar)> formats)
+    {
         if (!TryOpenClipboard())
         {
             throw new IOException("The clipboard is in use by another application.");
@@ -227,8 +424,11 @@ public sealed class WindowsClipboard : IClipboardMonitor, IClipboardWriter
                 throw new Win32Exception(Marshal.GetLastPInvokeError(), "EmptyClipboard failed.");
             }
 
-            var bytes = MemoryMarshal.AsBytes(text.AsSpan());
-            SetGlobalData(CF_UNICODETEXT, bytes, appendNullChar: true);
+            foreach (var (format, data, appendNullChar) in formats)
+            {
+                SetGlobalData(format, data, appendNullChar);
+            }
+
             SetGlobalData(_remoteOriginFormat, BitConverter.GetBytes(1), appendNullChar: false);
             // Privacy: content received from another device never goes to Windows cloud clipboard or history.
             SetGlobalData(_canUploadToCloudFormat, BitConverter.GetBytes(0), appendNullChar: false);

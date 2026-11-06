@@ -48,7 +48,7 @@ jobs:
       - name: Build MSIX (test-signed; validates the manifest)
         run: .github/scripts/build-msix.ps1 -Version "0.0.$env:GITHUB_RUN_NUMBER" -SourceDir publish/RemoteClipboard -OutputPath installer/Output/RemoteClipboard-test.msix -TestSign
       - name: Test build in a private draft release
-        if: github.event_name == 'push' && github.ref_name != 'main'
+        if: github.event_name == 'push' && github.ref_name != 'main' && !startsWith(github.ref_name, 'dependabot/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

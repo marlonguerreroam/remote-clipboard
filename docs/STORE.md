@@ -93,7 +93,7 @@ firma). La versión del paquete debe ser mayor en cada envío.
 > los registros, y solo llega a los equipos que tú vinculas con un código de un solo uso.
 
 **Características:**
-- Sincronización automática y bidireccional del texto copiado (hasta 32 MiB).
+- Sincronización automática y bidireccional de texto, imágenes y archivos copiados.
 - Cifrado TLS con autenticación mutua y vinculación segura con código de 6 dígitos.
 - Descubrimiento automático de tus equipos en la red local.
 - Por equipo: enviar y recibir, solo enviar o solo recibir.

@@ -14,14 +14,16 @@ namespace RemoteClipboard.Core.Sync;
 /// </summary>
 public sealed class ClipboardAssembler
 {
-    private readonly int _maxContentBytes;
+    private readonly int? _maxContentBytes;
     private readonly int _maxChunkBytes;
     private ClipboardUpdateMessage? _first;
     private byte[]? _buffer;
     private int _received;
     private int _nextIndex;
 
-    public ClipboardAssembler(int maxContentBytes = ProtocolLimits.MaxClipboardBytes, int maxChunkBytes = ProtocolLimits.ChunkBytes)
+    /// <param name="maxContentBytes">Size limit for every format; null uses the per-format protocol limits
+    /// (larger for files than for text and images).</param>
+    public ClipboardAssembler(int? maxContentBytes = null, int maxChunkBytes = ProtocolLimits.ChunkBytes)
     {
         _maxContentBytes = maxContentBytes;
         _maxChunkBytes = maxChunkBytes;
@@ -37,10 +39,11 @@ public sealed class ClipboardAssembler
         if (chunk.ChunkIndex == 0)
         {
             Reset();
-            Validate(chunk.TotalLength is >= 0 && chunk.TotalLength <= _maxContentBytes, "Clipboard content exceeds the size limit.");
+            Validate(chunk.Format != ClipboardFormat.Unknown && Enum.IsDefined(chunk.Format), "Unsupported clipboard format.");
+            var limit = _maxContentBytes ?? ProtocolLimits.MaxContentBytes(chunk.Format);
+            Validate(chunk.TotalLength is >= 0 && chunk.TotalLength <= limit, "Clipboard content exceeds the size limit.");
             var expectedCount = Math.Max(1, (chunk.TotalLength + _maxChunkBytes - 1) / _maxChunkBytes);
             Validate(chunk.ChunkCount >= expectedCount && chunk.ChunkCount <= Math.Max(1, chunk.TotalLength), "Invalid chunk count.");
-            Validate(chunk.Format != ClipboardFormat.Unknown && Enum.IsDefined(chunk.Format), "Unsupported clipboard format.");
             _first = chunk;
             _buffer = new byte[chunk.TotalLength];
         }
