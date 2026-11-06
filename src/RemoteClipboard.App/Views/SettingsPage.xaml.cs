@@ -33,6 +33,8 @@ public sealed partial class SettingsPage : UserControl
         NameBox.Text = settings.DisplayName ?? string.Empty;
         NameHint.Text = $"Vacío = nombre del equipo ({Environment.MachineName}).";
         DiscoveryBox.IsChecked = settings.DiscoveryEnabled;
+        ImagesBox.IsChecked = settings.SyncImages;
+        FilesBox.IsChecked = settings.SyncFiles;
         PortBox.Text = settings.PreferredPort.ToString(CultureInfo.InvariantCulture);
         AutoStartBox.IsChecked = AppController.IsAutoStartEnabled;
         AutoStartBox.Visibility = AppController.CanManageAutoStart ? Visibility.Visible : Visibility.Collapsed;
@@ -79,6 +81,8 @@ public sealed partial class SettingsPage : UserControl
         {
             DisplayName = AppSettings.NormalizeDisplayName(NameBox.Text),
             DiscoveryEnabled = DiscoveryBox.IsChecked == true,
+            SyncImages = ImagesBox.IsChecked == true,
+            SyncFiles = FilesBox.IsChecked == true,
             PreferredPort = port,
             Theme = SelectedTheme,
         };
@@ -88,7 +92,7 @@ public sealed partial class SettingsPage : UserControl
         if (restartRequired)
         {
             var answer = MessageBox.Show(Window.GetWindow(this)!,
-                "Algunos cambios (nombre, visibilidad en la red o puerto) se aplican al reiniciar Remote Clipboard.\n\n¿Reiniciar ahora?",
+                "Algunos cambios (nombre, visibilidad en la red, puerto, imágenes o archivos) se aplican al reiniciar Remote Clipboard.\n\n¿Reiniciar ahora?",
                 "Reiniciar Remote Clipboard", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes);
             if (answer == MessageBoxResult.Yes)
             {

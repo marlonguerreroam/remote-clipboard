@@ -20,6 +20,16 @@ public static class AppPaths
     public static string LogsDirectory => Path.Combine(DataDirectory, "logs");
 
     /// <summary>
+    /// Files received from other devices (deleted after a day). It must be a real path that Explorer can
+    /// read when pasting: inside an MSIX package that is the package's private LocalCache folder.
+    /// </summary>
+    public static string ReceivedFilesDirectory => PackageInfo.FamilyName is { } family
+        ? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Packages", family, "LocalCache", "Local", "RemoteClipboard", "received")
+        : Path.Combine(DataDirectory, "received");
+
+    /// <summary>
     /// Logs folder as other programs (Explorer) see it. Inside an MSIX package, writes to %LOCALAPPDATA%
     /// are redirected to the package's private LocalCache; only the app sees the original path.
     /// </summary>

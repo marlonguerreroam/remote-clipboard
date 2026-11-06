@@ -64,4 +64,11 @@ netsh advfirewall firewall add rule name="Remote Clipboard (descubrimiento)" dir
 | 29 | Activar una clave emitida con `LicenseTool issue` (pegarla con saltos de línea) | "Licencia activada"; muestra titular y edición; persiste tras reiniciar |
 | 30 | Activar una clave alterada o de otra clave privada | Mensaje de error; el estado no cambia |
 | 31 | Prueba vencida (adelantar la fecha de Windows 15 días) sin licencia | "Prueba finalizada"; el interruptor de sincronización queda deshabilitado; al activar una licencia vuelve a sincronizar |
+| 32 | Captura con Win+Shift+S en A; Ctrl+V en Paint/Word/WhatsApp Web de B | La imagen aparece igual |
+| 33 | Copiar una imagen desde el navegador en A; pegar en B | La imagen aparece (si la página también copia texto, gana el texto) |
+| 34 | Copiar 3 archivos y una carpeta en el Explorador de A; Ctrl+V en el Escritorio de B | Aviso "Archivos recibidos"; se copian con su contenido y subcarpetas |
+| 35 | Copiar archivos que suman más de 128 MB | Aviso "No se envió al otro equipo"; B conserva lo anterior |
+| 36 | Recibir un `.exe` y abrirlo en B | Windows avisa de que viene de otro equipo (SmartScreen / Propiedades → Desbloquear) |
+| 37 | Configuración → desactivar Imágenes en B → reiniciar; copiar imagen en A | B no la recibe; el texto sigue llegando |
+| 38 | Uno de los equipos con la versión anterior (v0.4) | Siguen conectados; el antiguo solo recibe texto |
 | 19 | Bandeja → Salir; volver a abrir la app. Repetir con Configuración → Guardar → "Reiniciar ahora" | La app se cierra del todo (no queda `RemoteClipboard.exe` en el Administrador de tareas) y vuelve a abrir |

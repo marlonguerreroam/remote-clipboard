@@ -16,7 +16,10 @@ SHA-256, HMAC, HKDF, DPAPI y J-PAKE (RFC 8236, implementación de BouncyCastle).
 | Adivinar el código de vinculación | Vincularse sin permiso | J-PAKE: sólo 1 intento online por ejecución; código de un solo uso, 2 min, 3 fallos ⇒ código quemado. |
 | Otro usuario del mismo Windows Server | Leer el portapapeles o robar la identidad | Agente por usuario en su sesión, identidad cifrada con DPAPI CurrentUser, lista de peers por usuario. |
 | Lectura de logs/archivos | Recuperar contenido | Nunca se registra ni se guarda contenido; huellas HMAC sólo en memoria con clave aleatoria. |
-| Peer malicioso vinculado | DoS por mensajes enormes | Límite de trama (1 MiB) y de contenido (32 MiB) verificado **antes** de reservar memoria. |
+| Peer malicioso vinculado | DoS por mensajes enormes | Límite de trama (1 MiB) y de contenido (32 MiB texto/imagen, 128 MiB archivos) verificado **antes** de reservar memoria. |
+| Peer malicioso vinculado | Escribir fuera de la carpeta de recibidos o llenar el disco con archivos | Extracción defensiva: nombres validados (sin rutas absolutas, `..`, nombres reservados de Windows ni caracteres inválidos), nada fuera de la carpeta destino, sin duplicados, máx. 10 000 elementos y límite sobre los bytes **realmente escritos** (bombas de compresión). |
+| Peer malicioso vinculado | Ejecutar un programa recibido sin aviso | Los archivos recibidos llevan la marca `Zone.Identifier` (como una descarga): SmartScreen y la Vista protegida de Office actúan. Pegar nunca ejecuta nada. |
+| Peer malicioso vinculado | Imagen malformada | Solo se decodifica PNG, con dimensiones acotadas (8K × 8K). |
 | Anuncios de descubrimiento falsificados | Redirigir o "envenenar" la dirección de un equipo vinculado | El anuncio es sólo un candidato de conexión; la dirección se guarda únicamente tras verificar el pin en TLS. Datagramas ≤ 1 KB, validados y saneados. |
 | Peer vinculado que reenvía contenido ajeno | Inyectar contenido "de otro" | `OriginDeviceId` debe ser el del peer autenticado; nada se retransmite. |
 
@@ -97,5 +100,6 @@ pero no encaja con "introduzca el código mostrado"; queda como plan B sin depen
 - Se respetan los formatos de exclusión que usan los gestores de contraseñas
   (`ExcludeClipboardContentFromMonitorProcessing`, `CanUploadToCloud=0`, etc.): ese contenido ni se lee.
 - Lo recibido de otro equipo se marca para que no vaya al portapapeles en la nube ni al historial de Windows.
+- Los archivos recibidos se guardan solo en una carpeta privada por transferencia y se borran a las 24 horas.
 - Una prueba de extremo a extremo verifica que ni el contenido copiado ni el código de vinculación
   aparecen en ningún log.

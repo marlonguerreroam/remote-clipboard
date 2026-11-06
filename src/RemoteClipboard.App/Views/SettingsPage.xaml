@@ -31,6 +31,26 @@
           </StackPanel>
         </Border>
 
+        <TextBlock Text="QUÉ SE SINCRONIZA" Style="{StaticResource SectionTitle}" />
+        <Border Style="{StaticResource Card}" Padding="22" Margin="0,0,0,20">
+          <StackPanel>
+            <TextBlock Text="El texto se sincroniza siempre (hasta 32 MB)." Style="{StaticResource Caption}" FontSize="13" />
+            <CheckBox x:Name="ImagesBox" Style="{StaticResource Switch}" Margin="0,14,0,0">
+              <StackPanel>
+                <TextBlock Text="Imágenes" Foreground="{DynamicResource TextPrimary}" FontSize="14" />
+                <TextBlock Text="Capturas de pantalla e imágenes copiadas (hasta 32 MB)." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+              </StackPanel>
+            </CheckBox>
+            <CheckBox x:Name="FilesBox" Style="{StaticResource Switch}" Margin="0,14,0,0">
+              <StackPanel>
+                <TextBlock Text="Archivos y carpetas" Foreground="{DynamicResource TextPrimary}" FontSize="14" />
+                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                           Text="Copiados en el Explorador (hasta 128 MB). Los recibidos se guardan en una carpeta privada y se borran a las 24 horas." />
+              </StackPanel>
+            </CheckBox>
+          </StackPanel>
+        </Border>
+
         <TextBlock Text="APARIENCIA Y ARRANQUE" Style="{StaticResource SectionTitle}" />
         <Border Style="{StaticResource Card}" Padding="22">
           <StackPanel>

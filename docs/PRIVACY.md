@@ -11,6 +11,8 @@ explícitamente**, dentro de tu red local. Esta política explica qué datos man
 | Dato | Uso | Dónde queda |
 |---|---|---|
 | **Texto que copias** (portapapeles) | Se envía a tus equipos vinculados para que puedas pegarlo allí. | Solo en memoria, mientras se transmite. **No se guarda** en disco, **no se registra** en los logs y no hay historial. |
+| **Imágenes que copias** | Se envían a tus equipos vinculados para pegarlas allí. | Solo en memoria; no se guardan ni se registran. |
+| **Archivos y carpetas que copias** | Se envían a tus equipos vinculados para pegarlos allí. | En el equipo que los recibe, en una carpeta privada de la app, **solo hasta 24 horas** (deben existir en disco para poder pegarlos); luego se borran. Nunca se registran sus nombres ni su contenido. |
 | Nombre del equipo, versión de Windows, direcciones IP de la red local | Mostrarte qué equipos están conectados y encontrarlos en tu red. | Tu equipo y tus equipos vinculados. |
 | Identidad del dispositivo (identificador aleatorio y clave criptográfica) | Autenticar a tus equipos vinculados. | Tu equipo, cifrada con la protección de datos de Windows (DPAPI) de tu usuario. |
 | Lista de equipos vinculados y preferencias | Funcionamiento de la aplicación. | Tu equipo. |
@@ -35,6 +37,7 @@ con un código de un solo uso pueden enviar o recibir contenido. Detalles técni
 
 - Pausar la sincronización en cualquier momento (interruptor de la ventana o menú de la bandeja).
 - Elegir por cada equipo: enviar y recibir, solo enviar o solo recibir.
+- Desactivar la sincronización de imágenes o de archivos en Configuración (deja de enviarlos y de recibirlos).
 - Desvincular un equipo, que dejará de recibir o enviar contenido.
 - Desinstalar la aplicación. La versión de la Microsoft Store borra también sus datos locales; en la
   versión clásica puedes borrar `%LOCALAPPDATA%\RemoteClipboard`.
