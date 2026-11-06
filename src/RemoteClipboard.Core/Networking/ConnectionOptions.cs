@@ -34,4 +34,11 @@ public sealed record ConnectionOptions
     public TimeSpan ReconnectMinDelay { get; init; } = TimeSpan.FromSeconds(1);
 
     public TimeSpan ReconnectMaxDelay { get; init; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Formats this device accepts from others, announced in the hello (text is always accepted). Turning
+    /// images or files off in Settings removes them here, so peers stop sending them.
+    /// </summary>
+    public IReadOnlyList<Clipboard.ClipboardFormat> AcceptedFormats { get; init; } =
+        [Clipboard.ClipboardFormat.Text, Clipboard.ClipboardFormat.Image, Clipboard.ClipboardFormat.FileList];
 }

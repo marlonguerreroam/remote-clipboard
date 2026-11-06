@@ -11,6 +11,9 @@ using RemoteClipboard.Core.Protocol;
 
 namespace RemoteClipboard.Core.Sync;
 
+/// <summary>Remote content written to the local clipboard: who sent it and what kind (never the content).</summary>
+public sealed record ReceivedContent(DeviceId From, ClipboardFormat Format);
+
 /// <summary>
 /// Bidirectional clipboard synchronization. All clipboard work (local changes and remote writes) is
 /// processed sequentially on one queue, so the newest change always wins and the echo guard sees
@@ -22,6 +25,7 @@ public sealed class SyncEngine
     private readonly IClipboardWriter _writer;
     private readonly Func<IReadOnlyCollection<PeerConnection>> _connections;
     private readonly Func<DeviceId, SyncDirection> _directionOf;
+    private readonly IReadOnlyCollection<ClipboardFormat> _accepted;
     private readonly ILogger _logger;
     private readonly TimeProvider _time;
     private readonly ClipboardEchoGuard _guard = new();
@@ -35,7 +39,8 @@ public sealed class SyncEngine
         Func<IReadOnlyCollection<PeerConnection>> connections,
         ILogger logger,
         TimeProvider? time = null,
-        Func<DeviceId, SyncDirection>? directionOf = null)
+        Func<DeviceId, SyncDirection>? directionOf = null,
+        IReadOnlyCollection<ClipboardFormat>? acceptedFormats = null)
     {
         _localId = localId;
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
@@ -44,6 +49,7 @@ public sealed class SyncEngine
         _time = time ?? TimeProvider.System;
         // Read live so a policy change applies immediately to existing connections.
         _directionOf = directionOf ?? (_ => SyncDirection.Bidirectional);
+        _accepted = acceptedFormats ?? [ClipboardFormat.Text, ClipboardFormat.Image, ClipboardFormat.FileList];
     }
 
     public bool Enabled { get; set; } = true;
@@ -52,7 +58,10 @@ public sealed class SyncEngine
     public event EventHandler<Guid>? ContentSent;
 
     /// <summary>Raised after remote content was written to the local clipboard.</summary>
-    public event EventHandler<DeviceId>? ContentReceived;
+    public event EventHandler<ReceivedContent>? ContentReceived;
+
+    /// <summary>Raised when a local change was not sent because it is too large (no content in the event).</summary>
+    public event EventHandler<ClipboardFormat>? ContentTooLarge;
 
     /// <summary>Called from the clipboard monitor; returns immediately.</summary>
     public void OnLocalClipboardChanged(object? sender, ClipboardChange change)
@@ -114,7 +123,11 @@ public sealed class SyncEngine
             return;
         }
 
-        var targets = _connections().Where(c => _directionOf(c.PeerId) != SyncDirection.ReceiveOnly).ToList();
+        var format = change.Content?.Format ?? change.TooLargeFormat;
+        // Devices running an older version (or with images/files turned off) only receive what they accept.
+        var targets = _connections()
+            .Where(c => _directionOf(c.PeerId) != SyncDirection.ReceiveOnly && c.RemoteHello.CanReceive(format))
+            .ToList();
         if (targets.Count == 0)
         {
             return;
@@ -124,6 +137,11 @@ public sealed class SyncEngine
         if (decision != OutboundDecision.Broadcast)
         {
             Log.ClipboardChangeSkipped(_logger, decision);
+            if (decision == OutboundDecision.SkipTooLarge)
+            {
+                ContentTooLarge?.Invoke(this, format);
+            }
+
             return;
         }
 
@@ -154,7 +172,8 @@ public sealed class SyncEngine
 
     private async Task ApplyRemoteAsync(PeerConnection connection, Guid messageId, ClipboardContent content, CancellationToken cancellationToken)
     {
-        if (!_dedup.TryRegister(messageId) || !Enabled || _directionOf(connection.PeerId) == SyncDirection.SendOnly)
+        if (!_dedup.TryRegister(messageId) || !Enabled || _directionOf(connection.PeerId) == SyncDirection.SendOnly
+            || !_accepted.Contains(content.Format))
         {
             return;
         }
@@ -165,9 +184,10 @@ public sealed class SyncEngine
         {
             await _writer.WriteRemoteContentAsync(content, cancellationToken).ConfigureAwait(false);
             Log.RemoteClipboardApplied(_logger, messageId, connection.PeerId);
-            ContentReceived?.Invoke(this, connection.PeerId);
+            ContentReceived?.Invoke(this, new ReceivedContent(connection.PeerId, content.Format));
         }
-        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception or InvalidOperationException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException
+            or System.ComponentModel.Win32Exception or InvalidOperationException or ArgumentException)
         {
             Log.ClipboardWriteFailed(_logger, ex);
         }

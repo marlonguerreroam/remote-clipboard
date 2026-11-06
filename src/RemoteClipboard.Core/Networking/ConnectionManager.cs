@@ -658,7 +658,7 @@ public sealed class ConnectionManager : IAsyncDisposable
     }
 
     private HelloMessage LocalHello() =>
-        new(ProtocolLimits.ProtocolVersion, _identity.Id.Value, _info.DisplayName, _info.OsDescription, ListenPort);
+        new(ProtocolLimits.ProtocolVersion, _identity.Id.Value, _info.DisplayName, _info.OsDescription, ListenPort, _options.AcceptedFormats);
 
     private void OnPeersChanged(object? sender, EventArgs e) => SyncDialers();
 

@@ -20,6 +20,13 @@ public static class ProtocolLimits
     /// </summary>
     public const int MaxClipboardBytes = 32 * 1024 * 1024;
 
+    /// <summary>Maximum size of copied files and folders, as an archive (128 MiB).</summary>
+    public const int MaxFileListBytes = 128 * 1024 * 1024;
+
+    /// <summary>Size limit for a format: <see cref="MaxFileListBytes"/> for files, otherwise <see cref="MaxClipboardBytes"/>.</summary>
+    public static int MaxContentBytes(Clipboard.ClipboardFormat format) =>
+        format == Clipboard.ClipboardFormat.FileList ? MaxFileListBytes : MaxClipboardBytes;
+
     /// <summary>Raw payload bytes per <see cref="ClipboardUpdateMessage"/>.</summary>
     public const int ChunkBytes = 256 * 1024;
 

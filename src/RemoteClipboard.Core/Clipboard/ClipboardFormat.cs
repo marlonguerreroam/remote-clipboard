@@ -4,8 +4,8 @@
 namespace RemoteClipboard.Core.Clipboard;
 
 /// <summary>
-/// Wire-level clipboard payload formats. Values are part of the protocol: never renumber.
-/// Only <see cref="Text"/> is supported in the MVP.
+/// Wire-level clipboard payload formats. Values are part of the protocol: never renumber. Peers announce
+/// which formats they accept in <c>HelloMessage.Accepts</c>; text is always accepted.
 /// </summary>
 public enum ClipboardFormat
 {
@@ -14,6 +14,11 @@ public enum ClipboardFormat
     /// <summary>Plain Unicode text, UTF-8 encoded on the wire (CF_UNICODETEXT on Windows).</summary>
     Text = 1,
 
-    // Reserved for future phases:
-    // RichText = 2, Html = 3, Image = 4, FileList = 5
+    // Reserved: RichText = 2, Html = 3.
+
+    /// <summary>A bitmap image, PNG-encoded on the wire (screenshots, images copied from apps).</summary>
+    Image = 4,
+
+    /// <summary>Files and folders (copied in Explorer), as a ZIP archive on the wire (see <c>FileArchive</c>).</summary>
+    FileList = 5,
 }
