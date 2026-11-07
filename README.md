@@ -58,8 +58,8 @@ El usuario final **no necesita instalar .NET** ni otras dependencias (publicaci�
 **Prueba gratuita de 14 días**; después, la sincronización requiere una licencia (se activa en *Acerca de*,
 sin conexión a Internet). Ver [docs/LICENSING.md](docs/LICENSING.md).
 
-**Instalador listo para usar (de pago):** `RemoteClipboardSetup-vX.Y.Z.exe` se distribuye por el canal
-de venta oficial (próximamente). Instala en *Archivos de programa*, crea los accesos directos y **configura
+**Instalador listo para usar (de pago):** `RemoteClipboardSetup-vX.Y.Z.exe` se compra en
+[Gumroad](https://marloguerrero.gumroad.com/l/remote-clipboard). Instala en *Archivos de programa*, crea los accesos directos y **configura
 el firewall automáticamente** (solo redes privadas/dominio y subred local). Para actualizar, ejecuta el
 instalador nuevo encima: se conservan la configuración y los dispositivos vinculados. Detalles en
 [installer/README.md](installer/README.md). Comprarlo apoya el desarrollo.

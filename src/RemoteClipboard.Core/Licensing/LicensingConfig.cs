@@ -16,7 +16,7 @@ public static class LicensingConfig
     public const string PublicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEh8nb/LS6jXKXb74kcYRhfuy1FmRuv35Wg9PDn8oeCZOo/bPpVVo5gvKTnYqbUjFIbxptVlFc/x+2jHGuOsbMrQ==";
 
     /// <summary>Purchase page; the "Buy" button is hidden while empty.</summary>
-    public const string PurchaseUrl = "";
+    public const string PurchaseUrl = "https://marloguerrero.gumroad.com/l/remote-clipboard";
 
     public const int TrialDays = 14;
 
