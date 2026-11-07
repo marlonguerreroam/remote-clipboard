@@ -41,6 +41,7 @@ envía por **TCP + TLS mutuo** directamente a los dispositivos vinculados.
 | [docs/PRIVACY.md](docs/PRIVACY.md) | Política de privacidad |
 | [docs/STORE.md](docs/STORE.md) | Publicación en la Microsoft Store (MSIX) |
 | [docs/LICENSING.md](docs/LICENSING.md) | Prueba gratuita, claves de licencia sin conexión y cómo emitirlas |
+| [docs/SALES.md](docs/SALES.md) | Venta en Gumroad: configuración, textos, términos, reembolsos y correo de la licencia |
 
 ## Requisitos y Windows compatibles
 
