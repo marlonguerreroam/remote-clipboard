@@ -118,6 +118,14 @@ public sealed class LicenseTests : IDisposable
     }
 
     [Fact]
+    public void Purchase_link_is_the_official_https_store_page()
+    {
+        Assert.True(Uri.TryCreate(LicensingConfig.PurchaseUrl, UriKind.Absolute, out var uri));
+        Assert.Equal(Uri.UriSchemeHttps, uri.Scheme);
+        Assert.Equal("marloguerrero.gumroad.com", uri.Host);
+    }
+
+    [Fact]
     public void Without_public_key_no_license_is_required()
     {
         using var manager = new LicenseManager(_store, null, _time);
